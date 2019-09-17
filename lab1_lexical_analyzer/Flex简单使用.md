@@ -40,15 +40,18 @@ int words = 0;
 [a-zA-Z]+ { chars += strlen(yytext);words++;}
  /*你可以在这里使用你熟悉的正则表达式来编写模式*/
  /*你可以用C代码来指定模式匹配时对应的动作*/
+ /*yytext指针指向本次匹配的输入文本*/
 
 . {}
+ /*对其他所有字符，不做处理，继续执行*/
 
 %%
 
 int main(int argc, char **argv){
     yylex();
+    //yylex()是flex提供的词法分析例程，默认读取stdin                                                                     
     printf("look, I find %d words of %d chars\n", words, chars);
-	return 0;
+    return 0;
 }
 ```
 
@@ -64,8 +67,10 @@ look, I find 2 words of 10 chars
 [TA@TA example]$ 
 ```
 
-*注: 在以stdin为输入时，需要按下ctrl+D以退出*
+*注: 在以stdin为输入时，需要按下ctrl+D以退出* 
 
 至此，你已经成功使用Flex完成了一个简单的分析器！
+
+关于Flex的更为复杂的操作，可以参考实验提供的框架代码，框架代码已经帮你定义好了token_type，给出了循环读取yylex()和修改yyin指针读取文件的例子，相信你已经完全具备了完成整个实验的所有知识(确信)。
 
 剩下的实验，就看你操作啦！
