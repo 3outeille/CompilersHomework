@@ -23,7 +23,7 @@ sudo yum install flex flex-devel
 flex 2.5.37
 ```
 
-## 使用flex
+## 使用Flex
 
 我们以一个简单的单词数量统计的程序wc.l为例: 
 
