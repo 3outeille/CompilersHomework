@@ -1,0 +1,12 @@
+int x, y, z=0;
+/* * a = 1* */ int a = 1; /* c = 2; */ int b = 1;	 /*/sf*/
+int xx[100];
+void main(int argc, int argv []) {
+	/* /* 8*/ a = c;
+	x = (y - z) / x * (z+ x);
+	hello();
+	while(((x==0))){x=0;}
+}
+/* hoi
+   hoi
+   hoi */
