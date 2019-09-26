@@ -19,5 +19,5 @@
 * 贯通高级程序语言，编译原理，计算机组成原理，微机系统与接口技术等多门专业课程
 
 ## TODO
-1. fork本项目，fork后将自己的仓库的项目设为private
+1. fork本项目，fork后将自己的仓库的项目[设为private](http://210.45.114.30/gbxu/notice_board/issues/52)
 2. 按照要求完成每次实验
