@@ -19,7 +19,7 @@ Commands for other Linux distributions are similar.
 ```
 (shell) $ ./do_cmake.sh
 ```
-Now you have your `build` directory. Just run `make` in that directory:
+Now you have your `build` directory. Just run `make` in that directory: (no need to change directory, `-C` option means that)
 ```
 (shell) $ make -C build/
 ```
@@ -48,7 +48,7 @@ Original structure of `lexical_analyzer.l`:
 We have the following changes:
  - Move definition of token type to `lexical_analyzer.h` header file for both lab1 and lab2 to access this definition
  - Move definition of function `getAllTestcase` to `common` module for lab1, lab2 and all future labs to better access this function. This function is declared in `common.h` and implemented in `common.c`. As a result, your implementation should be moved to `common.c` as well.
- - Rename `main` in Lab1 as `lex_main`. There is only 1 `main` function allowed per executable. Since we use lexical analyzer as a module in the future, we keeps back its right to have `main`. However, we do not mean giving up debugging or testing lab1. Another file `test_lex.c` is added into this subdirectory, which invokes `lex_main` to do the same thing. (However this file is not occupied in the lexical module in the future)
+ - Rename `main` in Lab1 as `lex_main`. There is only 1 `main` function allowed per executable. Since we use lexical analyzer as a module in the future, we keeps back its right to have `main`. However, we do not mean giving up debugging or testing lab1. Another file `test_lex.c` is added into this subdirectory, which invokes `lex_main` to do the same thing. (However this file is not occupied in the lexical module in the future) The output executable is `build/test_lex`
 
 ## About lab2 itself
 ### Introduction
@@ -60,6 +60,9 @@ Your goal is to generate a syntax tree for each input file. The procedures are s
 
 ### Syntax Tree
 Now we have implemented syntax tree structure for you in `syntax_tree` module (under the root directory of your repository), with header file `syntax_tree/SyntaxTree.h` included in `syntax_analyzer.y`. The `syntax_tree` module is very ordinary for a single tree. We just help you with the `printSyntaxTree` method for you to generate output to `FILENAME.syntax_tree` file.
+
+### Output Executable
+Executable is at `build/test_syntax`.
 
 # FAQ: How to merge upperstream remote branches
 This question has been talked about in issue #33. In brief, you need another alias for upstream repository (we assume you are now in your local copy of forked repository on Gitlab):
