@@ -21,3 +21,31 @@
 ## TODO
 1. fork本项目，fork后将自己的仓库的项目[设为private](http://210.45.114.30/gbxu/notice_board/issues/52)
 2. 按照要求完成每次实验
+
+# BUILD
+**CMake** is a tool designed for generating `Makefile` files. Here we generate executables, libraries, etc. in a separate directory called `build` to avoid source code directory pollution. To simplify what you need to do, just run `do_cmake.sh` shell script:
+```
+(shell) $ ./do_cmake.sh
+```
+Now you have your `build` directory. Just run `make` in that directory:
+```
+(shell) $ make -C build/
+```
+Now everything is OK! No need to bother with command `bison xxx` or `flex xxx` again.
+
+## Troubleshooting
+We have written rules for **CMake** to check packages before generating `Makefile` file. **You must have g++, Flex and Bison installed on your system**. If any other problems show up, try to solve it yourself. Talking on board is also welcome.
+
+# FAQ: How to merge upperstream remote branches
+This question has been talked about in issue #33. In brief, you need another alias for upstream repository (we assume you are now in your local copy of forked repository on Gitlab):
+```
+(shell) $ git remote add upstream git@210.45.114.30:staff/compiler_cminus.git
+```
+Then try to merge remote commits to your local repository:
+```
+(shell) $ git pull upstream master
+```
+Then synchronize changes to your forked remote repository:
+```
+(shell) $ git push origin master
+```
