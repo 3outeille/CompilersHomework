@@ -1,7 +1,7 @@
 Lab 2 is designed by Xinyang Shao @TA.Daniel, Youhui Bai @Bai. Any questions or feed back, please tell us on [issue board](http://210.45.114.30/gbxu/notice_board/-/boards).
 
 # Assignment
-Use **Bison** (Reference [here](http://210.45.114.30/staff/compiler_cminus/blob/master/lab2_lexical_analyzer/Bison_Tutorial.md)) to build up a **syntax analyzer** for [C-](http://210.45.114.30/staff/compiler_cminus/blob/master/CMINUS.md).
+Use **Bison** (Reference [here](http://210.45.114.30/staff/compiler_cminus/blob/master/lab2_syntax_analyzer/Bison_Tutorial.md)) to build up a **syntax analyzer** for [C-](http://210.45.114.30/staff/compiler_cminus/blob/master/CMINUS.md).
 
 # What is new in Lab 2
 To avoid messy source code directories, we occupy **CMake** tool to manage source code in this file. **NOTE: It is not compulsory for you to understand grammar of CMake.** We have already finished CMake rules in this repository. Follow our instructions, you do not need to care about the annoying source code dependency. However, if you want to add new source code files, CMake configuration files have to be modified at your own risk.
