@@ -27,7 +27,7 @@
 ```
 (shell) $ ./do_cmake.sh
 ```
-Now you have your `build` directory. Just run `make` in that directory:
+Now you have your `build` directory. Just run `make` in that directory: (no need to change directory, `-C` option means that)
 ```
 (shell) $ make -C build/
 ```
