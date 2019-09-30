@@ -68,10 +68,11 @@ void syntax(const char * input, const char * output)
 	if (!fp)	return;
 
 	// yyerror() is invoked when yyparse fail. If you still want to check the return value, it's OK.
+	// `while (!feof(yyin))` is not needed here. We only analyze once.
 	yyparse();
 
 	printf("[OUTPUT] Printing tree to output file %s\n", outputpath);
-	printSyntaxTree(stdout, gt);
+	printSyntaxTree(fp, gt);
 	deleteSyntaxTree(gt);
 	gt = 0;
 
