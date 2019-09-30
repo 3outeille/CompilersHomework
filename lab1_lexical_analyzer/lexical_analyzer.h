@@ -36,8 +36,8 @@ typedef enum cminus_token_type {
 	WHILE = 283,
 	IDENTIFIER = 284,
 	NUMBER = 285,
-	LETTER = 286,
-	ARRAY = 287,
+	ARRAY = 286
+	LETTER = 287,
 	EOL = 288,
 	COMMENT = 289,
 	BLANK = 290
