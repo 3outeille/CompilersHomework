@@ -1,51 +1,15 @@
 %option noyywrap
 %{
 /*****************声明和选项设置  begin*****************/
-#include <string.h>
 #include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <dirent.h>
-int files_count = 0;
-/*int lines = 1;*/
-/*int pos_start = 0;*/
-/*int pos_end = 0;*/
+#include <stdlib.h>
 
-enum cminus_token_type{
-	ERROR = 258,
-	ADD = 259,
-	SUB = 260,
-	MUL = 261,
-	DIV = 262,
-	LT = 263,
-	LTE = 264,
-	GT = 265,
-	GTE = 266,
-	EQ = 267,
-	NEQ = 268,
-	ASSIN = 269,
-	SEMICOLON = 270,
-	COMMA = 271,
-	LPARENTHESE = 272,
-	RPARENTHESE = 273,
-	LBRACKET = 274,
-	RBRACKET = 275,
-	LBRACE = 276,
-	RBRACE = 277,
-	ELSE = 278,
-	IF = 279,
-	INT = 280,
-	RETURN = 281,
-	VOID = 282,
-	WHILE = 283,
-	IDENTIFIER = 284,
-	NUMBER = 285,
-	LETTER = 286,
-	ARRAY = 287,
-	EOL = 288,
-	COMMENT = 289,
-	BLANK = 290
-};
+#include "lab1_lexical_analyzer/lexical_analyzer.h"
+#include "common/common.h"
+
+#ifndef LAB1_ONLY
+#include "syntax_analyzer.h"
+#endif
 
 /* try to use bison location but failed */
 /*#include "parser.tab.h"*/
@@ -87,10 +51,17 @@ myloc* pmyloc = &ml;
 %}
 
 DIGIT [0-9]
-NUM {DIGIT}+
+ /*NUM {DIGIT}+*/
+NUM (0|[1-9]{DIGIT}*)
 LETTERS [a-zA-Z]
 ID {LETTERS}+
  /*ID [a-zA-Z_][a-zA-Z0-9_]**/
+
+ /* TA's patterns */
+ /*commentPattern "/*"([^\*]|(\*)*[^\*/])*(\*)*"*/"*/
+ /*digitPattern [0-9]*/
+ /*numberPattern (0|[1-9]{digitPattern}*)*/
+ /*identifierPattern [a-zA-Z][a-zA-Z]**/
 
 %%
 
@@ -139,8 +110,6 @@ while {return WHILE;}
  /****  end******/
 %%
 
-/****************请按需求补全C代码 start*************/
-
 /// \brief analysize a *.cminus file
 ///
 ///	\param input_file_name
@@ -164,6 +133,7 @@ void analyzer(char* input_file_name, char* output_file_name){
 		switch(token){
 			case ERROR:
 				printf("[ERR]: unable to analysize %s at %d line, from %d to %d\n", yytext, 
+				fprintf(fp, "[ERR]: unable to analysize %s at %d line, from %d to %d\n", yytext, 
 						pmyloc->first_line, pmyloc->first_column, pmyloc->last_column);
 				break;
 			case COMMENT:
@@ -183,28 +153,6 @@ void analyzer(char* input_file_name, char* output_file_name){
 	printf("[END]: Analysis completed.\n");
 }
 
-/// \brief get all file paths under 'testcase' directory
-///
-/// under 'testcase' directory, there could be many *.cminus files.
-/// \todo student should fill this function
-void getAllTestcase(char filename[][256], char extension[]){
-	DIR *d;
-	struct dirent *dir;
-	d = opendir("./testcase");
-	int extlen = strlen(extension);
-	int dnamelen;
-	if (d) {
-		while((dir = readdir(d)) != NULL) {
-			dnamelen = strlen(dir->d_name);
-			// check whether the extension matches
-			if ((dnamelen > extlen) && (strcmp(dir->d_name + dnamelen - extlen, extension) == 0)) {
-				strncpy(filename[++files_count - 1], dir->d_name, 255);
-				printf("[INFO]: Found file %s to analyze.\n", dir->d_name);
-			}
-		}
-		closedir(d);
-	}
-}
 
 /// \brief process all *.cminus file
 ///
@@ -212,7 +160,7 @@ void getAllTestcase(char filename[][256], char extension[]){
 ///	process all *.cminus files under 'testcase' directory,
 /// then create *.tokens files under 'tokens' directory
 /// \todo student should fill this function
-int main(int argc, char **argv){
+int lex_main(int argc, char **argv){
 	char filename[10][256];
 	char output_file_name[256];
 	char suffix[] = ".tokens";

@@ -1,0 +1,6 @@
+build/
+syntree/
+.idea/
+cmake-build-debug/
+
+*.swp
