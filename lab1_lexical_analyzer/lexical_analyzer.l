@@ -21,8 +21,6 @@ int pos_end;
 %}
 
 commentPattern "/*"([^\*]|(\*)*[^\*/])*(\*)*"*/"
-digitPattern [0-9]
-numberPattern (0|[1-9]{digitPattern}*)
 identifierPattern [a-zA-Z][a-zA-Z]*
 
 %%

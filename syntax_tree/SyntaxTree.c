@@ -17,6 +17,13 @@ SyntaxTreeNode * newSyntaxTreeNode(const char * name)
 	return newNode;
 }
 
+SyntaxTreeNode * newSyntaxTreeNodeFromNum(const int num)
+{
+	SyntaxTreeNode * ret = newSyntaxTreeNodeNoName();
+	sprintf(ret->name, "%d", num);
+	return ret;
+}
+
 int SyntaxTreeNode_AddChild(SyntaxTreeNode * parent, SyntaxTreeNode * child)
 {
 	if (!parent || !child)	return -1;

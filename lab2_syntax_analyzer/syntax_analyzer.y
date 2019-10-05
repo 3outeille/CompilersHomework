@@ -11,6 +11,7 @@
 // external functions from lex
 extern int yylex();
 extern int yyparse();
+extern int yyrestart();
 extern FILE * yyin;
 
 // external variables from lexical_analyzer module
@@ -63,6 +64,7 @@ void syntax(const char * input, const char * output)
 		fprintf(stderr, "[ERR] Open input file %s failed.", inputpath);
 		exit(1);
 	}
+	yyrestart(yyin);
 	printf("[START]: Syntax analysis start for %s\n", input);
 	FILE * fp = fopen(outputpath, "w+");
 	if (!fp)	return;
