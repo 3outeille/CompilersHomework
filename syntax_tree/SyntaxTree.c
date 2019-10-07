@@ -72,6 +72,9 @@ void printSyntaxTreeNode(FILE * fout, SyntaxTreeNode * node, int level)
 {
 	// assume fout valid now
 	
+	// check if "node" empty pointer
+	if (!node)	return;
+	
 	// print myself
 	int i;
 	for (i = 0; i < level; i++) {
