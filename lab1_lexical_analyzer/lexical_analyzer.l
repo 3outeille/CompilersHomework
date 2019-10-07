@@ -70,6 +70,10 @@ void action(Token t)
 #endif
 }
 
+// Two patterns provided by TA
+// commentPattern "/*"([^\*]|(\*)*[^\*/])*(\*)*"*/"
+// identifierPattern [a-zA-Z][a-zA-Z]*
+
 
 %}
 

@@ -16,6 +16,7 @@ typedef struct _SyntaxTreeNode SyntaxTreeNode;
 
 SyntaxTreeNode * newSyntaxTreeNodeNoName();
 SyntaxTreeNode * newSyntaxTreeNode(const char * name);
+SyntaxTreeNode * newSyntaxTreeNodeFromNum(const int num);
 int SyntaxTreeNode_AddChild(SyntaxTreeNode * parent, SyntaxTreeNode * child);
 void deleteSyntaxTreeNodeNoRecur(SyntaxTreeNode * node);
 void deleteSyntaxTreeNode(SyntaxTreeNode * node, int recursive);

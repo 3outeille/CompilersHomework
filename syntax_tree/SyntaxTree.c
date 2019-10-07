@@ -14,6 +14,17 @@ SyntaxTreeNode * newSyntaxTreeNode(const char * name)
 	SyntaxTreeNode * newNode = (SyntaxTreeNode *)malloc(sizeof(SyntaxTreeNode));
 	if (name)
 		strcpy(newNode->name, name);
+	else
+		newNode->name[0] = '\0';
+	newNode->children_num = 0;
+	return newNode;
+}
+
+SyntaxTreeNode * newSyntaxTreeNodeFromNum(const int num)
+{
+	SyntaxTreeNode * newNode = newSyntaxTreeNodeNoName();
+	sprintf(newNode->name, "%d", num);
+	newNode->children_num = 0;
 	return newNode;
 }
 
@@ -60,6 +71,9 @@ void deleteSyntaxTree(SyntaxTree * tree)
 void printSyntaxTreeNode(FILE * fout, SyntaxTreeNode * node, int level)
 {
 	// assume fout valid now
+	
+	// check if "node" empty pointer
+	if (!node)	return;
 	
 	// print myself
 	int i;

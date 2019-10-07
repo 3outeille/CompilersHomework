@@ -67,5 +67,7 @@ cmake-build-debug/
 
 *.tab.c
 *.tab.h
+syntree/*
+!syntree/.gitkeep
 
 *.swp
