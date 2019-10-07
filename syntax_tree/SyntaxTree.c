@@ -14,14 +14,18 @@ SyntaxTreeNode * newSyntaxTreeNode(const char * name)
 	SyntaxTreeNode * newNode = (SyntaxTreeNode *)malloc(sizeof(SyntaxTreeNode));
 	if (name)
 		strcpy(newNode->name, name);
+	else
+		newNode->name[0] = '\0';
+	newNode->children_num = 0;
 	return newNode;
 }
 
 SyntaxTreeNode * newSyntaxTreeNodeFromNum(const int num)
 {
-	SyntaxTreeNode * ret = newSyntaxTreeNodeNoName();
-	sprintf(ret->name, "%d", num);
-	return ret;
+	SyntaxTreeNode * newNode = newSyntaxTreeNodeNoName();
+	sprintf(newNode->name, "%d", num);
+	newNode->children_num = 0;
+	return newNode;
 }
 
 int SyntaxTreeNode_AddChild(SyntaxTreeNode * parent, SyntaxTreeNode * child)
