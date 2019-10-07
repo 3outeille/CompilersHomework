@@ -3,12 +3,20 @@
 /*****************声明和选项设置  begin*****************/
 #include <stdio.h>
 #include <stdlib.h>
+/*#include "syntax_analyzer.tab.h"*/
 
 #include "lab1_lexical_analyzer/lexical_analyzer.h"
 #include "common/common.h"
+#include "syntax_tree/SyntaxTree.h"
 
 #ifndef LAB1_ONLY
 #include "syntax_analyzer.h"
+/*#include "syntax_analyzer.tab.h"*/
+#endif
+
+
+#ifdef DIRTY
+/*#include "syntax_analyzer.tab.h"*/
 #endif
 
 /* try to use bison location but failed */
@@ -26,12 +34,6 @@
             /*yylloc->last_column++; \*/
         /*} \*/
     /*}*/
-typedef struct {
-	int first_line;
-	int first_column;
-	int last_line;
-	int last_column;
-}myloc;
 myloc ml;
 myloc* pmyloc = &ml;
 #define YY_USER_ACTION \
@@ -48,6 +50,27 @@ myloc* pmyloc = &ml;
     }
 /*****************end*****************/
 
+/*extern YYSTYPE yylval;*/
+
+void action(Token t)
+{
+#ifndef LAB1_ONLY
+	// use actual number instead of just NUM identifier
+	/*if (t == NUMBER) {*/
+		/*yylval.node = newSyntaxTreeNode("number:");*/
+		/*strncat(yylval.node->name, yytext, 20);*/
+		/*strncpy(yylval.node->name, yytext, 30);*/
+		/*yylval.node->name = */
+	/*}*/
+	/*else {*/
+	/*}*/
+	yylval.node = newSyntaxTreeNode(strtoken(t));
+	strncpy(yylval.node->name, yytext, 30);
+	printf("action string for tree: %s\n", yylval.node->name);
+#endif
+}
+
+
 %}
 
 DIGIT [0-9]
@@ -57,54 +80,49 @@ LETTERS [a-zA-Z]
 ID {LETTERS}+
  /*ID [a-zA-Z_][a-zA-Z0-9_]**/
 
- /* TA's patterns */
- /*commentPattern "/*"([^\*]|(\*)*[^\*/])*(\*)*"*/"*/
- /*digitPattern [0-9]*/
- /*numberPattern (0|[1-9]{digitPattern}*)*/
- /*identifierPattern [a-zA-Z][a-zA-Z]**/
-
 %%
 
  /****请在此补全所有flex的模式与动作  start******/
 
-\n {return EOL;}
+\n {}
  /* comments */
-\/\*(\/?([^\*\/]|\n)*\*?([^\*\/]|\n)+\/?)**\*\/ {return COMMENT;}
+\/\*(\/?([^\*\/]|\n)*\*?([^\*\/]|\n)+\/?)**\*\/ {}
  /* special symbols */
-\+ {return ADD;}
-\- {return SUB;}
-\* {return MUL;}
-\/ {return DIV;}
-\< {return LT;}
-\<= {return LTE;}
-\> {return GT;}
-\>= {return GTE;}
-== {return EQ;}
-!= {return NEQ;}
-= {return ASSIN;}
-; {return SEMICOLON;}
-, {return COMMA;}
-\( {return LPARENTHESE;}
-\) {return RPARENTHESE;}
-\[ {return LBRACKET;}
-\] {return RBRACKET;}
-\{ {return LBRACE;}
-\} {return RBRACE;}
-\[\] {return ARRAY;}
+\+ {action(ADD); return ADD;}
+\- {action(SUB); return SUB;}
+\* {action(MUL); return MUL;}
+\/ {action(DIV); return DIV;}
+\< {action(LT); return LT;}
+\<= {action(LTE); return LTE;}
+\> {action(GT); return GT;}
+\>= {action(GTE); return GTE;}
+== {action(EQ); return EQ;}
+!= {action(NEQ); return NEQ;}
+= {action(ASSIN); return ASSIN;}
+; {action(SEMICOLON); return SEMICOLON;}
+, {action(COMMA); return COMMA;}
+\( {action(LPARENTHESE); return LPARENTHESE;}
+\) {action(RPARENTHESE); return RPARENTHESE;}
+\[ {action(LBRACKET); return LBRACKET;}
+\] {action(RBRACKET); return RBRACKET;}
+\{ {action(LBRACE); return LBRACE;}
+\} {action(RBRACE); return RBRACE;}
+\[\] {action(ARRAY); return ARRAY;}
  /* keywords */
-else {return ELSE;}
-if {return IF;}
-int {return INT;}
-return {return RETURN;}
-void {return VOID;}
-while {return WHILE;}
+else {action(ELSE); return ELSE;}
+if {action(IF); return IF;}
+int {action(INT); return INT;}
+return {action(RETURN); return RETURN;}
+void {action(VOID); return VOID;}
+while {action(WHILE); return WHILE;}
  /* identifiers and numbers */
- /*{LETTERS} {return LETTER;}*/
-{ID} {return IDENTIFIER;}
-{NUM} {return NUMBER;}
- /* blank */
-[ \t] {return BLANK;}
-. {return ERROR;}
+ /*{LETTERS} {action(LETTER); return LETTER;}*/
+{ID} {action(IDENTIFIER); return IDENTIFIER;}
+ /*{NUM} {yylval.intValue = atoi(yytext); action(NUMBER); return NUMBER;}*/
+{NUM} {action(NUMBER); return NUMBER;}
+ /* blank, do nothing */
+[ \t] {}
+. {action(ERROR); return ERROR;}
 
 
  /****  end******/
@@ -125,6 +143,8 @@ void analyzer(char* input_file_name, char* output_file_name){
 		printf("[ERR] No input file\n");
 		exit(1);
 	}
+	// reinitialize position counter
+	pmyloc->first_line = pmyloc->first_column = pmyloc->last_line = pmyloc->last_column = 1;
 	printf("[START]: Read from: %s\n", input_file_name);
 	FILE *fp = fopen(output_path,"w+");
 	int token;
@@ -133,6 +153,7 @@ void analyzer(char* input_file_name, char* output_file_name){
 		switch(token){
 			case ERROR:
 				printf("[ERR]: unable to analysize %s at %d line, from %d to %d\n", yytext, 
+						pmyloc->first_line, pmyloc->first_column, pmyloc->last_column);
 				fprintf(fp, "[ERR]: unable to analysize %s at %d line, from %d to %d\n", yytext, 
 						pmyloc->first_line, pmyloc->first_column, pmyloc->last_column);
 				break;
@@ -165,14 +186,12 @@ int lex_main(int argc, char **argv){
 	char output_file_name[256];
 	char suffix[] = ".tokens";
 	char extension[] = ".cminus";
-	getAllTestcase(filename, extension);
+	int files_count = getAllTestcase(filename);
 	for(int i = 0; i < files_count; i++){
-		// reinitialize position counter
-		pmyloc->first_line = pmyloc->first_column = pmyloc->last_line = pmyloc->last_column = 1;
 		// prepare output filename
 		strcpy(output_file_name, filename[i]);
 		strcpy(output_file_name + strlen(output_file_name) - strlen(extension), suffix);
-		analyzer(filename[i],output_file_name);
+		analyzer(filename[i], output_file_name);
 	}
 	return 0;
 }

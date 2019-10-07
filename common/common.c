@@ -10,10 +10,11 @@
 ///
 /// under 'testcase' directory, there could be many *.cminus files.
 /// \todo student should fill this function
-int getAllTestcase(char filename[][256], char extension[]){
+int getAllTestcase(char filename[][256]){
 	DIR *d;
 	struct dirent *dir;
 	d = opendir("./testcase");
+	char extension[] = ".cminus";
 	int extlen = strlen(extension);
 	int dnamelen;
 	int file_count = 0;
