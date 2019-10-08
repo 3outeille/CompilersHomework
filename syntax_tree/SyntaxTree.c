@@ -55,7 +55,9 @@ void deleteSyntaxTreeNode(SyntaxTreeNode * node, int recursive)
 
 SyntaxTree * newSyntaxTree()
 {
-	return (SyntaxTree *)malloc(sizeof(SyntaxTree));
+	SyntaxTree * newTree = (SyntaxTree *)malloc(sizeof(SyntaxTree));
+	newTree->root = 0;
+	return newTree;
 }
 
 void deleteSyntaxTree(SyntaxTree * tree)
