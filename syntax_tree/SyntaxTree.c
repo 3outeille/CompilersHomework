@@ -87,6 +87,25 @@ void printSyntaxTreeNode(FILE * fout, SyntaxTreeNode * node, int level)
 	}
 }
 
+void printSyntaxTreeNodeGraphic(FILE* fout, SyntaxTreeNode* node)
+{
+	fprintf(fout, "svgling.draw_tree(");
+	printSyntaxTreeNodeGraphic1(fout, node);
+	fprintf(fout, ")\n");
+}
+
+void printSyntaxTreeNodeGraphic1(FILE* fout, SyntaxTreeNode* node)
+{
+	if (!node) return;
+	int i;
+	fprintf(fout, "(\"%s\"", node->name);
+	for (i = 0; i < node->children_num; i++) {
+		fprintf(fout, ", ");
+		printSyntaxTreeNodeGraphic1(fout, node->children[i]);
+	}
+	fprintf(fout, ")");
+}
+
 void printSyntaxTree(FILE * fout, SyntaxTree * tree)
 {
 	if (!fout)	return;
