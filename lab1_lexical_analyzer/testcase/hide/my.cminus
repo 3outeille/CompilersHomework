@@ -1,5 +1,7 @@
-int x, y, z=0;
-/* * a = 1* */ int a = 1; /* c = 2; */ int b = 1;	 /*/sf*/
+int x;
+int y;
+int z;
+/* * a = 1* */ int a; /* c = 2; */ int b;	 /*/sf*/
 int xx[100];
 void main(int argc, int argv []) {
 	/* /* 8*/ a = c;
@@ -10,3 +12,4 @@ void main(int argc, int argv []) {
 /* hoi
    hoi
    hoi */
+

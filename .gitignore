@@ -70,4 +70,7 @@ cmake-build-debug/
 syntree/*
 !syntree/.gitkeep
 
+*.output
+.ipynb_*
+
 *.swp

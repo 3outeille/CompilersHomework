@@ -66,7 +66,7 @@ void action(Token t)
 	/*}*/
 	yylval.node = newSyntaxTreeNode(strtoken(t));
 	strncpy(yylval.node->name, yytext, 30);
-	printf("action string for tree: %s\n", yylval.node->name);
+	/*printf("action string for tree: %s\n", yylval.node->name);*/
 #endif
 }
 
@@ -153,7 +153,7 @@ void analyzer(char* input_file_name, char* output_file_name){
 	FILE *fp = fopen(output_path,"w+");
 	int token;
 	// yylex(): entry point of lex, read yyin, return zero on end 
-	while(token = yylex()){
+	while((token = yylex())){
 		switch(token){
 			case ERROR:
 				printf("[ERR]: unable to analysize %s at %d line, from %d to %d\n", yytext, 

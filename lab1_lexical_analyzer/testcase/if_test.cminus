@@ -1,0 +1,8 @@
+void fun(void){
+	if (a)
+		if(b)
+			a;
+		else
+			b;
+	return;
+}

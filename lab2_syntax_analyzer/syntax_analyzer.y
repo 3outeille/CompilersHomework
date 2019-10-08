@@ -8,6 +8,10 @@
 
 #include "lab1_lexical_analyzer/lexical_analyzer.h"
 
+// uncomment this to generate tree-generation python files
+/*#define TREE_GEN_GRAPH*/
+/*#define TREE_GEN_TEXT*/
+
 // external functions from lex
 extern int yylex();
 extern int yyparse();
@@ -23,6 +27,40 @@ extern char * yytext;
 SyntaxTree * gt;
 
 void yyerror(const char * s);
+
+void callback(int p, void* ptr)
+{
+#ifdef TREE_GEN_TEXT
+	if (p == 1) {
+		printSyntaxTreeNode(stdout, (SyntaxTreeNode*)ptr, 0);
+	}
+#endif
+#ifdef TREE_GEN_GRAPH
+	static FILE* fout;
+	static char* output;
+	static int counter;
+	if (p == 1) {
+		printSyntaxTreeNodeGraphic(fout, (SyntaxTreeNode*)ptr);
+		/*fprintf(fout, "treefromsyntaxtree.get_svg().saveas(\"%s_%d.svg\")\n", output, ++counter);*/
+	}
+	else if (p == 0) {
+		printf("[DEBUG TREE] start new file...\n");
+		counter = 0;
+		char outputpathtree[256] = "./treegraph/";
+		output = ptr;
+		strcat(outputpathtree, output);
+		strcat(outputpathtree, ".py");
+		printf("[DEBUG TREE] generate python script %s...\n", outputpathtree);
+		fout = fopen(outputpathtree, "w");
+		fprintf(fout, "#!/usr/bin/env python3\nfrom IPython.core.interactiveshell import InteractiveShell\nInteractiveShell.ast_node_interactivity = \"all\"\nimport svgling\n");
+	}
+	else if (p == -1) {
+		printf("[DEBUG TREE] done.\n");
+		fclose(fout);
+	}
+#endif
+	return;
+}
 %}
 
 %union {
@@ -31,6 +69,8 @@ SyntaxTreeNode * node;
 }
 
 %token <node> ERROR ADD SUB MUL DIV LT LTE GT GTE EQ NEQ ASSIN SEMICOLON COMMA LPARENTHESE RPARENTHESE LBRACKET RBRACKET LBRACE RBRACE ELSE IF INT RETURN VOID WHILE ID NUMBER ARRAY LETTER EOL COMMENT BLANK
+%nonassoc LOWER_THAN_ELSE
+%nonassoc ELSE
 
 /********** TODO: Your token definition here ***********/
 
@@ -39,98 +79,98 @@ SyntaxTreeNode * node;
 
 %%
 /*************** TODO: Your rules here *****************/
-program : declaration_list {gt->root = newSyntaxTreeNode("program"); SyntaxTreeNode_AddChild(gt->root, $<node>1); printf("[INFO] Syntax analyze succeeded.\n");}
+program : declaration_list {gt->root = newSyntaxTreeNode("program"); SyntaxTreeNode_AddChild(gt->root, $<node>1);callback(1, $<node>$);}
 	;
-declaration_list : declaration_list declaration {$<node>$ = newSyntaxTreeNode("declaration-list"); SyntaxTreeNode_AddChild($<node>$, $<node>1); SyntaxTreeNode_AddChild($<node>$, $<node>2);}
-		 | declaration {$<node>$ = newSyntaxTreeNode("declaration-list"); SyntaxTreeNode_AddChild($<node>$, $<node>1);}
+declaration_list : declaration_list declaration {$<node>$ = newSyntaxTreeNode("declaration-list"); SyntaxTreeNode_AddChild($<node>$, $<node>1); SyntaxTreeNode_AddChild($<node>$, $<node>2);callback(1, $<node>$);}
+		 | declaration {$<node>$ = newSyntaxTreeNode("declaration-list"); SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
 		 ;
-declaration : var_declaration {$<node>$ = newSyntaxTreeNode("declaration");SyntaxTreeNode_AddChild($<node>$, $<node>1);}
-	    | fun_declaration {$<node>$ = newSyntaxTreeNode("declaration");SyntaxTreeNode_AddChild($<node>$, $<node>1);}
+declaration : var_declaration {$<node>$ = newSyntaxTreeNode("declaration");SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
+	    | fun_declaration {$<node>$ = newSyntaxTreeNode("declaration");SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
 	    ;
-var_declaration : type_specifier ID SEMICOLON {$<node>$ = newSyntaxTreeNode("var-declaration"); SyntaxTreeNode_AddChild($<node>$, $<node>1); SyntaxTreeNode_AddChild($<node>$, $<node>2);SyntaxTreeNode_AddChild($<node>$, $<node>3);}
-		| type_specifier ID LBRACKET NUMBER RBRACKET {$<node>$ = newSyntaxTreeNode("var-declaration"); SyntaxTreeNode_AddChild($<node>$, $<node>1); SyntaxTreeNode_AddChild($<node>$, $<node>2); SyntaxTreeNode_AddChild($<node>$, $<node>3); SyntaxTreeNode_AddChild($<node>$, $<node>4);SyntaxTreeNode_AddChild($<node>$, $<node>5);}
+var_declaration : type_specifier ID SEMICOLON {$<node>$ = newSyntaxTreeNode("var-declaration"); SyntaxTreeNode_AddChild($<node>$, $<node>1); SyntaxTreeNode_AddChild($<node>$, $<node>2);SyntaxTreeNode_AddChild($<node>$, $<node>3);callback(1, $<node>$);}
+		| type_specifier ID LBRACKET NUMBER RBRACKET SEMICOLON {$<node>$ = newSyntaxTreeNode("var-declaration"); SyntaxTreeNode_AddChild($<node>$, $<node>1); SyntaxTreeNode_AddChild($<node>$, $<node>2); SyntaxTreeNode_AddChild($<node>$, $<node>3); SyntaxTreeNode_AddChild($<node>$, $<node>4);SyntaxTreeNode_AddChild($<node>$, $<node>5);SyntaxTreeNode_AddChild($<node>$, $<node>6);callback(1, $<node>$);}
 		;
-type_specifier : INT {$<node>$ = newSyntaxTreeNode("type-specifier"); SyntaxTreeNode_AddChild($<node>$, $<node>1);}
-	       | VOID {$<node>$ = newSyntaxTreeNode("type-specifier"); SyntaxTreeNode_AddChild($<node>$, $<node>1);}
+type_specifier : INT {$<node>$ = newSyntaxTreeNode("type-specifier"); SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
+	       | VOID {$<node>$ = newSyntaxTreeNode("type-specifier"); SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
 	       ;
-fun_declaration : type_specifier ID LPARENTHESE params RPARENTHESE compound_stmt {$<node>$ = newSyntaxTreeNode("fun-declaration"); SyntaxTreeNode_AddChild($<node>$, $<node>1); SyntaxTreeNode_AddChild($<node>$, $<node>2); SyntaxTreeNode_AddChild($<node>$, $<node>3); SyntaxTreeNode_AddChild($<node>$, $<node>4); SyntaxTreeNode_AddChild($<node>$, $<node>5); SyntaxTreeNode_AddChild($<node>$, $<node>6);}
+fun_declaration : type_specifier ID LPARENTHESE params RPARENTHESE compound_stmt {$<node>$ = newSyntaxTreeNode("fun-declaration"); SyntaxTreeNode_AddChild($<node>$, $<node>1); SyntaxTreeNode_AddChild($<node>$, $<node>2); SyntaxTreeNode_AddChild($<node>$, $<node>3); SyntaxTreeNode_AddChild($<node>$, $<node>4); SyntaxTreeNode_AddChild($<node>$, $<node>5); SyntaxTreeNode_AddChild($<node>$, $<node>6);callback(1, $<node>$);}
 		;
-params : param_list  {$<node>$ = newSyntaxTreeNode("params"); SyntaxTreeNode_AddChild($<node>$, $<node>1);}
-       | VOID {$<node>$ = newSyntaxTreeNode("params"); SyntaxTreeNode_AddChild($<node>$, $<node>1);}
+params : param_list  {$<node>$ = newSyntaxTreeNode("params"); SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
+       | VOID {$<node>$ = newSyntaxTreeNode("params"); SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
        ;
-param_list : param_list COMMA param {$<node>$ = newSyntaxTreeNode("param-list"); SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);SyntaxTreeNode_AddChild($<node>$, $<node>3);}
-	   | param {$<node>$ = newSyntaxTreeNode("param-list"); SyntaxTreeNode_AddChild($<node>$, $<node>1);}
+param_list : param_list COMMA param {$<node>$ = newSyntaxTreeNode("param-list"); SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);SyntaxTreeNode_AddChild($<node>$, $<node>3);callback(1, $<node>$);}
+	   | param {$<node>$ = newSyntaxTreeNode("param-list"); SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
 	   ;
-param : type_specifier ID {$<node>$ = newSyntaxTreeNode("param");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);}
-      | type_specifier ID ARRAY {$<node>$ = newSyntaxTreeNode("param");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);SyntaxTreeNode_AddChild($<node>$, $<node>3);}
+param : type_specifier ID {$<node>$ = newSyntaxTreeNode("param");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);callback(1, $<node>$);}
+      | type_specifier ID ARRAY {$<node>$ = newSyntaxTreeNode("param");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);SyntaxTreeNode_AddChild($<node>$, $<node>3);callback(1, $<node>$);}
       ;
-compound_stmt : LBRACE local_declarations statement_list RBRACE {$<node>$ = newSyntaxTreeNode("compound-stmt");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);SyntaxTreeNode_AddChild($<node>$, $<node>3);SyntaxTreeNode_AddChild($<node>$, $<node>4);}
+compound_stmt : LBRACE local_declarations statement_list RBRACE {$<node>$ = newSyntaxTreeNode("compound-stmt");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);SyntaxTreeNode_AddChild($<node>$, $<node>3);SyntaxTreeNode_AddChild($<node>$, $<node>4);callback(1, $<node>$);}
 	      ;
-local_declarations : local_declarations var_declaration {$<node>$ = newSyntaxTreeNode("local-declarations");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);}
-		   | epsilon {$<node>$ = newSyntaxTreeNode("local-declarations");SyntaxTreeNode_AddChild($<node>$, $<node>1);}
+local_declarations : local_declarations var_declaration {$<node>$ = newSyntaxTreeNode("local-declarations");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);callback(1, $<node>$);}
+		   | epsilon {$<node>$ = newSyntaxTreeNode("local-declarations");SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
 		   ;
-statement_list : statement_list statement {$<node>$ = newSyntaxTreeNode("statement-list");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);}
-	       | epsilon {$<node>$ = newSyntaxTreeNode("statement-list");SyntaxTreeNode_AddChild($<node>$, $<node>1);}
+statement_list : statement_list statement {$<node>$ = newSyntaxTreeNode("statement-list");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);callback(1, $<node>$);}
+	       | epsilon {$<node>$ = newSyntaxTreeNode("statement-list");SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
 	       ;
-statement: expression_stmt {$<node>$ = newSyntaxTreeNode("statement");SyntaxTreeNode_AddChild($<node>$, $<node>1);}
-         | compound_stmt {$<node>$ = newSyntaxTreeNode("statement");SyntaxTreeNode_AddChild($<node>$, $<node>1);}
-         | selection_stmt {$<node>$ = newSyntaxTreeNode("statement");SyntaxTreeNode_AddChild($<node>$, $<node>1);}
-         | iteration_stmt {$<node>$ = newSyntaxTreeNode("statementt");SyntaxTreeNode_AddChild($<node>$, $<node>1);}
-         | return_stmt {$<node>$ = newSyntaxTreeNode("statement");SyntaxTreeNode_AddChild($<node>$, $<node>1);}
+statement: expression_stmt {$<node>$ = newSyntaxTreeNode("statement");SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
+         | compound_stmt {$<node>$ = newSyntaxTreeNode("statement");SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
+         | selection_stmt {$<node>$ = newSyntaxTreeNode("statement");SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
+         | iteration_stmt {$<node>$ = newSyntaxTreeNode("statementt");SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
+         | return_stmt {$<node>$ = newSyntaxTreeNode("statement");SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
          ;
-expression_stmt : expression SEMICOLON {$<node>$ = newSyntaxTreeNode("expression-stmt");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);}
-		| SEMICOLON {$<node>$ = newSyntaxTreeNode("expression-stmt");SyntaxTreeNode_AddChild($<node>$, $<node>1);}
+expression_stmt : expression SEMICOLON {$<node>$ = newSyntaxTreeNode("expression-stmt");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);callback(1, $<node>$);}
+		| SEMICOLON {$<node>$ = newSyntaxTreeNode("expression-stmt");SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
 		;
-selection_stmt : IF LPARENTHESE expression RPARENTHESE statement {$<node>$ = newSyntaxTreeNode("selection-stmt");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);SyntaxTreeNode_AddChild($<node>$, $<node>3);SyntaxTreeNode_AddChild($<node>$, $<node>4);SyntaxTreeNode_AddChild($<node>$, $<node>5);}
-	       | IF LPARENTHESE expression RPARENTHESE statement ELSE statement {$<node>$ = newSyntaxTreeNode("selection-stmt");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);SyntaxTreeNode_AddChild($<node>$, $<node>3);SyntaxTreeNode_AddChild($<node>$, $<node>4);SyntaxTreeNode_AddChild($<node>$, $<node>5);SyntaxTreeNode_AddChild($<node>$, $<node>6);SyntaxTreeNode_AddChild($<node>$, $<node>7);}
+selection_stmt : IF LPARENTHESE expression RPARENTHESE statement %prec LOWER_THAN_ELSE {$<node>$ = newSyntaxTreeNode("selection-stmt");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);SyntaxTreeNode_AddChild($<node>$, $<node>3);SyntaxTreeNode_AddChild($<node>$, $<node>4);SyntaxTreeNode_AddChild($<node>$, $<node>5);callback(1, $<node>$);}
+	       | IF LPARENTHESE expression RPARENTHESE statement ELSE statement {$<node>$ = newSyntaxTreeNode("selection-stmt");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);SyntaxTreeNode_AddChild($<node>$, $<node>3);SyntaxTreeNode_AddChild($<node>$, $<node>4);SyntaxTreeNode_AddChild($<node>$, $<node>5);SyntaxTreeNode_AddChild($<node>$, $<node>6);SyntaxTreeNode_AddChild($<node>$, $<node>7);callback(1, $<node>$);}
 	       ;
-iteration_stmt : WHILE LPARENTHESE expression RPARENTHESE statement {$<node>$ = newSyntaxTreeNode("iteration-stmt");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);SyntaxTreeNode_AddChild($<node>$, $<node>3);SyntaxTreeNode_AddChild($<node>$, $<node>4);SyntaxTreeNode_AddChild($<node>$, $<node>5);}
+iteration_stmt : WHILE LPARENTHESE expression RPARENTHESE statement {$<node>$ = newSyntaxTreeNode("iteration-stmt");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);SyntaxTreeNode_AddChild($<node>$, $<node>3);SyntaxTreeNode_AddChild($<node>$, $<node>4);SyntaxTreeNode_AddChild($<node>$, $<node>5);callback(1, $<node>$);}
 	       ;
-return_stmt : RETURN SEMICOLON {$<node>$ = newSyntaxTreeNode("return-stmt");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);}
-	    | RETURN expression SEMICOLON {$<node>$ = newSyntaxTreeNode("return-stmt");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);SyntaxTreeNode_AddChild($<node>$, $<node>3);}
+return_stmt : RETURN SEMICOLON {$<node>$ = newSyntaxTreeNode("return-stmt");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);callback(1, $<node>$);}
+	    | RETURN expression SEMICOLON {$<node>$ = newSyntaxTreeNode("return-stmt");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);SyntaxTreeNode_AddChild($<node>$, $<node>3);callback(1, $<node>$);}
 	    ;
-expression : var ASSIN expression {$<node>$ = newSyntaxTreeNode("expression");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);SyntaxTreeNode_AddChild($<node>$, $<node>3);}
-	   | simple_expression {$<node>$ = newSyntaxTreeNode("expression");SyntaxTreeNode_AddChild($<node>$, $<node>1);}
+expression : var ASSIN expression {$<node>$ = newSyntaxTreeNode("expression");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);SyntaxTreeNode_AddChild($<node>$, $<node>3);callback(1, $<node>$);}
+	   | simple_expression {$<node>$ = newSyntaxTreeNode("expression");SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
 	   ;
-var : ID {$<node>$ = newSyntaxTreeNode("var");SyntaxTreeNode_AddChild($<node>$, $<node>1);}
-    | ID LBRACKET expression RBRACKET {$<node>$ = newSyntaxTreeNode("var");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);SyntaxTreeNode_AddChild($<node>$, $<node>3);SyntaxTreeNode_AddChild($<node>$, $<node>4);}
+var : ID {$<node>$ = newSyntaxTreeNode("var");SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
+    | ID LBRACKET expression RBRACKET {$<node>$ = newSyntaxTreeNode("var");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);SyntaxTreeNode_AddChild($<node>$, $<node>3);SyntaxTreeNode_AddChild($<node>$, $<node>4);callback(1, $<node>$);}
     ;
-simple_expression : additive_expression relop additive_expression  {$<node>$ = newSyntaxTreeNode("simple-expression");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);SyntaxTreeNode_AddChild($<node>$, $<node>3);}
-		  | additive_expression {$<node>$ = newSyntaxTreeNode("simple-expression");SyntaxTreeNode_AddChild($<node>$, $<node>1);}
+simple_expression : additive_expression relop additive_expression  {$<node>$ = newSyntaxTreeNode("simple-expression");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);SyntaxTreeNode_AddChild($<node>$, $<node>3);callback(1, $<node>$);}
+		  | additive_expression {$<node>$ = newSyntaxTreeNode("simple-expression");SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
 		  ;
-relop : LTE {$<node>$ = newSyntaxTreeNode("relop");SyntaxTreeNode_AddChild($<node>$, $<node>1);}
-      | LT {$<node>$ = newSyntaxTreeNode("relop");SyntaxTreeNode_AddChild($<node>$, $<node>1);}
-      | GT {$<node>$ = newSyntaxTreeNode("relop");SyntaxTreeNode_AddChild($<node>$, $<node>1);}
-      | GTE {$<node>$ = newSyntaxTreeNode("relop");SyntaxTreeNode_AddChild($<node>$, $<node>1);}
-      | EQ {$<node>$ = newSyntaxTreeNode("relop");SyntaxTreeNode_AddChild($<node>$, $<node>1);}
-      | NEQ {$<node>$ = newSyntaxTreeNode("relop");SyntaxTreeNode_AddChild($<node>$, $<node>1);}
+relop : LTE {$<node>$ = newSyntaxTreeNode("relop");SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
+      | LT {$<node>$ = newSyntaxTreeNode("relop");SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
+      | GT {$<node>$ = newSyntaxTreeNode("relop");SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
+      | GTE {$<node>$ = newSyntaxTreeNode("relop");SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
+      | EQ {$<node>$ = newSyntaxTreeNode("relop");SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
+      | NEQ {$<node>$ = newSyntaxTreeNode("relop");SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
       ;
-additive_expression : additive_expression addop term {$<node>$ = newSyntaxTreeNode("additive-expression");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);SyntaxTreeNode_AddChild($<node>$, $<node>3);}
-		    | term {$<node>$ = newSyntaxTreeNode("additive-expression");SyntaxTreeNode_AddChild($<node>$, $<node>1);}
+additive_expression : additive_expression addop term {$<node>$ = newSyntaxTreeNode("additive-expression");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);SyntaxTreeNode_AddChild($<node>$, $<node>3);callback(1, $<node>$);}
+		    | term {$<node>$ = newSyntaxTreeNode("additive-expression");SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
 		    ;
-addop : ADD {$<node>$ = newSyntaxTreeNode("addop");SyntaxTreeNode_AddChild($<node>$, $<node>1);}
-      | SUB {$<node>$ = newSyntaxTreeNode("addop");SyntaxTreeNode_AddChild($<node>$, $<node>1);}
+addop : ADD {$<node>$ = newSyntaxTreeNode("addop");SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
+      | SUB {$<node>$ = newSyntaxTreeNode("addop");SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
       ;
-term : term mulop factor {$<node>$ = newSyntaxTreeNode("term");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);SyntaxTreeNode_AddChild($<node>$, $<node>3);}
-     | factor {$<node>$ = newSyntaxTreeNode("term");SyntaxTreeNode_AddChild($<node>$, $<node>1);}
+term : term mulop factor {$<node>$ = newSyntaxTreeNode("term");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);SyntaxTreeNode_AddChild($<node>$, $<node>3);callback(1, $<node>$);}
+     | factor {$<node>$ = newSyntaxTreeNode("term");SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
      ;
-mulop : MUL {$<node>$ = newSyntaxTreeNode("mulop");SyntaxTreeNode_AddChild($<node>$, $<node>1);}
-      | DIV {$<node>$ = newSyntaxTreeNode("mulop");SyntaxTreeNode_AddChild($<node>$, $<node>1);}
+mulop : MUL {$<node>$ = newSyntaxTreeNode("mulop");SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
+      | DIV {$<node>$ = newSyntaxTreeNode("mulop");SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
       ;
-factor : LPARENTHESE expression RPARENTHESE {$<node>$ = newSyntaxTreeNode("factor");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);SyntaxTreeNode_AddChild($<node>$, $<node>3);}
-       | var {$<node>$ = newSyntaxTreeNode("factor");SyntaxTreeNode_AddChild($<node>$, $<node>1);}
-       | call {$<node>$ = newSyntaxTreeNode("factor");SyntaxTreeNode_AddChild($<node>$, $<node>1);}
-       | NUMBER {$<node>$ = newSyntaxTreeNode("factor");SyntaxTreeNode_AddChild($<node>$, $<node>1);}
+factor : LPARENTHESE expression RPARENTHESE {$<node>$ = newSyntaxTreeNode("factor");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);SyntaxTreeNode_AddChild($<node>$, $<node>3);callback(1, $<node>$);}
+       | var {$<node>$ = newSyntaxTreeNode("factor");SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
+       | call {$<node>$ = newSyntaxTreeNode("factor");SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
+       | NUMBER {$<node>$ = newSyntaxTreeNode("factor");SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
        ;
-call : ID LPARENTHESE args RPARENTHESE {$<node>$ = newSyntaxTreeNode("call");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);SyntaxTreeNode_AddChild($<node>$, $<node>3);SyntaxTreeNode_AddChild($<node>$, $<node>4);}
+call : ID LPARENTHESE args RPARENTHESE {$<node>$ = newSyntaxTreeNode("call");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);SyntaxTreeNode_AddChild($<node>$, $<node>3);SyntaxTreeNode_AddChild($<node>$, $<node>4);callback(1, $<node>$);}
      ;
-args : arg_list {$<node>$ = newSyntaxTreeNode("args");SyntaxTreeNode_AddChild($<node>$, $<node>1);}
-     | epsilon {$<node>$ = newSyntaxTreeNode("args");SyntaxTreeNode_AddChild($<node>$, $<node>1);}
+args : arg_list {$<node>$ = newSyntaxTreeNode("args");SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
+     | epsilon {$<node>$ = newSyntaxTreeNode("args");SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
      ;
-arg_list : arg_list COMMA expression {$<node>$ = newSyntaxTreeNode("arg-list");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);SyntaxTreeNode_AddChild($<node>$, $<node>3);}
-	 | expression {$<node>$ = newSyntaxTreeNode("arg-list");SyntaxTreeNode_AddChild($<node>$, $<node>1);}
+arg_list : arg_list COMMA expression {$<node>$ = newSyntaxTreeNode("arg-list");SyntaxTreeNode_AddChild($<node>$, $<node>1);SyntaxTreeNode_AddChild($<node>$, $<node>2);SyntaxTreeNode_AddChild($<node>$, $<node>3);callback(1, $<node>$);}
+	 | expression {$<node>$ = newSyntaxTreeNode("arg-list");SyntaxTreeNode_AddChild($<node>$, $<node>1);callback(1, $<node>$);}
 	 ;
-epsilon : {$<node>$ = newSyntaxTreeNode("epsilon");}
+epsilon : {$<node>$ = newSyntaxTreeNode("epsilon");callback(1, $<node>$);}
 	;
 
 %%
@@ -166,18 +206,26 @@ void syntax(const char * input, const char * output)
 
 	// reinitialize position counter
 	pmyloc->first_line = pmyloc->first_column = pmyloc->last_line = pmyloc->last_column = 1;
+#ifdef TREE_GEN_GRAPH
+	callback(0, output);
+#endif
 	
 	// yyerror() is invoked when yyparse fail. If you still want to check the return value, it's OK.
 	// `while (!feof(yyin))` is not needed here. We only analyze once.
-	yyparse();
-
-	printf("[OUTPUT] Printing tree to output file %s\n", outputpath);
-	printSyntaxTree(fp, gt);
-	deleteSyntaxTree(gt);
-	gt = 0;
-
+	if ( yyparse() != 0 ) {
+		printf("[ERR] Error parsing %s. Abort. \n", input);
+	}
+	else {
+		printf("[OUTPUT] Printing tree to output file %s\n", outputpath);
+		printSyntaxTree(fp, gt);
+		deleteSyntaxTree(gt);
+		gt = 0;
+		printf("[END] Syntax analysis end for %s\n", input);
+	}
+#ifdef TREE_GEN_GRAPH
+	callback(-1, NULL);
+#endif
 	fclose(fp);
-	printf("[END] Syntax analysis end for %s\n", input);
 }
 
 /// \brief starting function for testing syntax module.

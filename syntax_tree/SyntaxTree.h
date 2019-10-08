@@ -29,5 +29,7 @@ typedef struct _SyntaxTree SyntaxTree;
 SyntaxTree * newSyntaxTree();
 void deleteSyntaxTree(SyntaxTree * tree);
 void printSyntaxTree(FILE * fout, SyntaxTree * tree);
+void printSyntaxTreeNodeGraphic(FILE* fout, SyntaxTreeNode* node);
+void printSyntaxTreeNodeGraphic1(FILE* fout, SyntaxTreeNode* node);
 
 #endif /* SyntaxTree.h */
