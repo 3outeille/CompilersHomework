@@ -64,8 +64,7 @@ void callback(int p, void* ptr)
 %}
 
 %union {
-/*struct _SyntaxTreeNode * node;*/
-SyntaxTreeNode * node;
+	SyntaxTreeNode * node;
 }
 
 %token <node> ERROR ADD SUB MUL DIV LT LTE GT GTE EQ NEQ ASSIN SEMICOLON COMMA LPARENTHESE RPARENTHESE LBRACKET RBRACKET LBRACE RBRACE ELSE IF INT RETURN VOID WHILE ID NUMBER ARRAY LETTER EOL COMMENT BLANK
@@ -177,8 +176,6 @@ epsilon : {$<node>$ = newSyntaxTreeNode("epsilon");callback(1, $<node>$);}
 
 void yyerror(const char * s)
 {
-	// TODO: variables in Lab1 updates only in analyze() function in lexical_analyzer.l
-	//       You need to move position updates to show error output below
 	fprintf(stderr, "%s:%d syntax error for %s\n", s, pmyloc->first_line, yytext);
 }
 
@@ -209,9 +206,12 @@ void syntax(const char * input, const char * output)
 #ifdef TREE_GEN_GRAPH
 	callback(0, output);
 #endif
-	
+
 	// yyerror() is invoked when yyparse fail. If you still want to check the return value, it's OK.
 	// `while (!feof(yyin))` is not needed here. We only analyze once.
+	//
+	// If error occurs when parsing, nothing will be printed into output file, but tree data will still
+	// availiable in stdout or tree file
 	if ( yyparse() != 0 ) {
 		printf("[ERR] Error parsing %s. Abort. \n", input);
 	}
@@ -222,6 +222,7 @@ void syntax(const char * input, const char * output)
 		gt = 0;
 		printf("[END] Syntax analysis end for %s\n", input);
 	}
+
 #ifdef TREE_GEN_GRAPH
 	callback(-1, NULL);
 #endif
@@ -233,19 +234,16 @@ void syntax(const char * input, const char * output)
 /// Invoked in test_syntax.c
 int syntax_main(int argc, char ** argv)
 {
-#ifdef YYDEBUG
+/*#ifdef YYDEBUG*/
 	/*extern int yydebug;*/
 	/*yydebug = 1;*/
-#endif
+/*#endif*/
 	char filename[10][256];
 	char output_file_name[256];
 	char suffix[] = ".syntax_tree";
 	char extension[] = ".cminus";
 	int fn = getAllTestcase(filename);
 	for (int i = 0; i < fn; i++) {
-		/*int name_len = strstr(filename[i], ".cminus") - filename[i];*/
-		/*strncpy(output_file_name, filename[i], name_len);*/
-		/*strcpy(output_file_name+name_len, suffix);*/
 		strcpy(output_file_name, filename[i]);
 		strcpy(output_file_name + strlen(output_file_name) - strlen(extension), suffix);
 		syntax(filename[i], output_file_name);

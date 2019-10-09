@@ -3,7 +3,6 @@
 /*****************声明和选项设置  begin*****************/
 #include <stdio.h>
 #include <stdlib.h>
-/*#include "syntax_analyzer.tab.h"*/
 
 #include "lab1_lexical_analyzer/lexical_analyzer.h"
 #include "common/common.h"
@@ -11,29 +10,8 @@
 
 #ifndef LAB1_ONLY
 #include "syntax_analyzer.h"
-/*#include "syntax_analyzer.tab.h"*/
 #endif
 
-
-#ifdef DIRTY
-/*#include "syntax_analyzer.tab.h"*/
-#endif
-
-/* try to use bison location but failed */
-/*#include "parser.tab.h"*/
-/*int yycolumn = 1;*/
-/*#define YY_USER_ACTION \*/
-    /*yylloc->first_line = yylloc->last_line; \*/
-    /*yylloc->first_column = yylloc->last_column; \*/
-    /*for(int i = 0; yytext[i] != '\0'; i++) { \*/
-        /*if(yytext[i] == '\n') { \*/
-            /*yylloc->last_line++; \*/
-            /*yylloc->last_column = 0; \*/
-        /*} \*/
-        /*else { \*/
-            /*yylloc->last_column++; \*/
-        /*} \*/
-    /*}*/
 myloc ml;
 myloc* pmyloc = &ml;
 #define YY_USER_ACTION \
@@ -49,8 +27,6 @@ myloc* pmyloc = &ml;
 	} \
     }
 /*****************end*****************/
-
-/*extern YYSTYPE yylval;*/
 
 void action(Token t)
 {

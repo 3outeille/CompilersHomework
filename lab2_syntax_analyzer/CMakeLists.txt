@@ -1,5 +1,6 @@
-bison_target(syntax syntax_analyzer.y ${CMAKE_CURRENT_BINARY_DIR}/syntax_analyzer.c
-	VERBOSE ${CMAKE_CURRENT_BINARY_DIR}/bison.out)
+bison_target(syntax syntax_analyzer.y ${CMAKE_CURRENT_BINARY_DIR}/syntax_analyzer.c)
+#bison_target(syntax syntax_analyzer.y ${CMAKE_CURRENT_BINARY_DIR}/syntax_analyzer.c
+	#VERBOSE ${CMAKE_CURRENT_BINARY_DIR}/bison.out)
 flex_target(lex ${PROJECT_SOURCE_DIR}/lab1_lexical_analyzer/lexical_analyzer.l ${CMAKE_CURRENT_BINARY_DIR}/lex.yy.c)
 add_flex_bison_dependency(lex syntax)
 add_library(syntax STATIC
