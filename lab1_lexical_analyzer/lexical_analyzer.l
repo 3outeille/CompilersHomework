@@ -46,6 +46,15 @@ void action(Token t)
 #endif
 }
 
+int lab1_only()
+{
+#ifndef LAB1_ONLY
+	return 0;
+#else
+	return 1;
+#endif
+}
+
 // Two patterns provided by TA
 // commentPattern "/*"([^\*]|(\*)*[^\*/])*(\*)*"*/"
 // identifierPattern [a-zA-Z][a-zA-Z]*
@@ -64,9 +73,9 @@ ID {LETTERS}+
 
  /****请在此补全所有flex的模式与动作  start******/
 
-\n {}
+\n {if(lab1_only()) return EOL;}
  /* comments */
-\/\*(\/?([^\*\/]|\n)*\*?([^\*\/]|\n)+\/?)**\*\/ {}
+\/\*(\/?([^\*\/]|\n)*\*?([^\*\/]|\n)+\/?)**\*\/ {if(lab1_only()) return COMMENT;}
  /* special symbols */
 \+ {action(ADD); return ADD;}
 \- {action(SUB); return SUB;}
@@ -101,7 +110,7 @@ while {action(WHILE); return WHILE;}
  /*{NUM} {yylval.intValue = atoi(yytext); action(NUMBER); return NUMBER;}*/
 {NUM} {action(NUMBER); return NUMBER;}
  /* blank, do nothing */
-[ \t] {}
+[ \t] {if(lab1_only()) return BLANK;}
 . {action(ERROR); return ERROR;}
 
 
