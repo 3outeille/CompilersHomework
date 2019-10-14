@@ -56,7 +56,6 @@ int lab1_only()
 }
 
 // Two patterns provided by TA
-// commentPattern "/*"([^\*]|(\*)*[^\*/])*(\*)*"*/"
 // identifierPattern [a-zA-Z][a-zA-Z]*
 
 
@@ -68,6 +67,7 @@ NUM (0|[1-9]{DIGIT}*)
 LETTERS [a-zA-Z]
 ID {LETTERS}+
  /*ID [a-zA-Z_][a-zA-Z0-9_]**/
+commentPattern "/*"([^\*]|(\*)*[^\*/])*(\*)*"*/"
 
 %%
 
@@ -75,7 +75,8 @@ ID {LETTERS}+
 
 \n {if(lab1_only()) return EOL;}
  /* comments */
-\/\*(\/?([^\*\/]|\n)*\*?([^\*\/]|\n)+\/?)**\*\/ {if(lab1_only()) return COMMENT;}
+ /* \/\*(\/?([^\*\/]|\n)*\*?([^\*\/]|\n)+\/?)**\*\/ {if(lab1_only()) return COMMENT;} */
+{commentPattern} {if(lab1_only()) return COMMENT;} 
  /* special symbols */
 \+ {action(ADD); return ADD;}
 \- {action(SUB); return SUB;}
