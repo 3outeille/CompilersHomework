@@ -238,7 +238,7 @@ int syntax_main(int argc, char ** argv)
 	/*extern int yydebug;*/
 	/*yydebug = 1;*/
 /*#endif*/
-	char filename[10][256];
+	char filename[50][256];
 	char output_file_name[256];
 	char suffix[] = ".syntax_tree";
 	char extension[] = ".cminus";
