@@ -84,7 +84,7 @@ void analyzer(char* input_file_name, char* output_file_name){
 ///
 /// note that: use relative path for all i/o operations
 int lex_main(int argc, char **argv){
-	char filename[10][256];
+	char filename[50][256];
 	char output_file_name[256];
 	char suffix[] = ".tokens";
 	files_count = getAllTestcase(filename);

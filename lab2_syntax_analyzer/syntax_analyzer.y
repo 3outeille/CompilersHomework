@@ -87,7 +87,7 @@ void syntax(const char * input, const char * output)
 /// Invoked in test_syntax.c
 int syntax_main(int argc, char ** argv)
 {
-	char filename[10][256];
+	char filename[50][256];
 	char output_file_name[256];
 	const char * suffix = ".syntax_tree";
 	int fn = getAllTestcase(filename);
