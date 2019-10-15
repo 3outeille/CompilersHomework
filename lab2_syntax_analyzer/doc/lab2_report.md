@@ -2,9 +2,11 @@
 
 Yimin Gu
 
+PB17000002
+
 File created on 2019.10.9
 
-Last modified 2019.10.13
+Last modified 2019.10.15
 
 ## Main ideas & implementation
 
@@ -50,6 +52,8 @@ And how to visualize the tree? I first tried LaTeX, but later find python to be 
 
 The result of the final tree is really good, as is shown below.
 
+To avoid messing up with existing code(and output), I defined macros TREE_GEN_TEXT and TREE_GEN_GRAPH, only when these macros are defined will the python scripts be generated. 
+
 A shot of the final of the gcd.cminus tree(the original svg picture is more than 6000 pixel in width):
 
 ![](./gcdtreeshot.png)
@@ -73,7 +77,7 @@ I feel that my whole project is a little bit messy, but don't know what to do ab
 
 **An attempted git repo cleanup**
 
-I misunderstood the instruction in lab1 and put the labs in my homework repository. So choose to rename the repository and remove those homework folders and commits. This turns out to be very hard. I'm not good enough at git to handle these rebase and cherrypick, even modifing an old commit message turns out to be hard for me. 
+I misunderstood the instruction in lab1 and put the labs in my homework repository. So choose to rename the repository and remove those homework folders and commits. This turns out to be very hard. I'm not good enough at git to handle these rebase and cherrypick, even modifing an old commit message turns out to be extremely hard for me. 
 
 What I can do is to delete all HW* folders using filter-branch. Now the repo is cleaner but there are still garbage here and there, maybe half a sentence in a commit message or an unexpected merge. 
 
@@ -81,7 +85,71 @@ What I can do is to delete all HW* folders using filter-branch. Now the repo is 
 
 So the result is good: required parts are done, and at least a visualized tree can be seen. 
 
-In this lab I continuously met problems about C header file and variable declaration/definition. Some of these is caused by my unfamiliar with cmake and misunderstanding of TAs' code, and others is because I'm not good at dealing with these kind of problems. 
+Take the `gcd` as an example: 
+
+The syntax tree is as expected.
+
+```
+>--+ program
+|  >--+ declaration-list
+|  |  >--+ declaration-list
+|  |  |  >--+ declaration
+|  |  |  |  >--+ fun-declaration
+|  |  |  |  |  >--+ type-specifier
+|  |  |  |  |  |  >--* int
+|  |  |  |  |  >--* gcd
+|  |  |  |  |  >--* (
+|  |  |  |  |  >--+ params
+|  |  |  |  |  |  >--+ param-list
+|  |  |  |  |  |  |  >--+ param-list
+|  |  |  |  |  |  |  |  >--+ param
+|  |  |  |  |  |  |  |  |  >--+ type-specifier
+|  |  |  |  |  |  |  |  |  |  >--* int
+|  |  |  |  |  |  |  |  |  >--* u
+|  |  |  |  |  |  |  >--* ,
+|  |  |  |  |  |  |  >--+ param
+|  |  |  |  |  |  |  |  >--+ type-specifier
+|  |  |  |  |  |  |  |  |  >--* int
+|  |  |  |  |  |  |  |  >--* v
+|  |  |  |  |  >--* )
+|  |  |  |  |  >--+ compound-stmt
+|  |  |  |  |  |  >--* {
+|  |  |  |  |  |  >--+ local-declarations
+|  |  |  |  |  |  |  >--* epsilon
+|  |  |  |  |  |  >--+ statement-list
+|  |  |  |  |  |  |  >--+ statement-list
+|  |  |  |  |  |  |  |  >--* epsilon
+|  |  |  |  |  |  |  >--+ statement
+|  |  |  |  |  |  |  |  >--+ selection-stmt
+|  |  |  |  |  |  |  |  |  >--* if
+|  |  |  |  |  |  |  |  |  >--* (
+|  |  |  |  |  |  |  |  |  >--+ expression
+|  |  |  |  |  |  |  |  |  |  >--+ simple-expression
+|  |  |  |  |  |  |  |  |  |  |  >--+ additive-expression
+|  |  |  |  |  |  |  |  |  |  |  |  >--+ term
+|  |  |  |  |  |  |  |  |  |  |  |  |  >--+ factor
+|  |  |  |  |  |  |  |  |  |  |  |  |  |  >--+ var
+|  |  |  |  |  |  |  |  |  |  |  |  |  |  |  >--* v
+|  |  |  |  |  |  |  |  |  |  |  >--+ relop
+|  |  |  |  |  |  |  |  |  |  |  |  >--* ==
+|  |  |  |  |  |  |  |  |  |  |  >--+ additive-expression
+|  |  |  |  |  |  |  |  |  |  |  |  >--+ term
+|  |  |  |  |  |  |  |  |  |  |  |  |  >--+ factor
+|  |  |  |  |  |  |  |  |  |  |  |  |  |  >--* 0
+|  |  |  |  |  |  |  |  |  >--* )
+|  |  |  |  |  |  |  |  |  >--+ statement
+|  |  |  |  |  |  |  |  |  |  >--+ return-stmt
+|  |  |  |  |  |  |  |  |  |  |  >--* return
+|  |  |  |  |  |  |  |  |  |  |  >--+ expression
+|  |  |  |  |  |  |  |  |  |  |  |  >--+ simple-expression
+(following output omitted)
+```
+
+And all the trees generated can be seen in `treegraph/trees.ipynb`. (Seems the trees can not be seen when the ipynb is viewed directly in gitlab, viewing in pycharm or jupyter is fine)
+
+In this lab I continuously met problems about C header file and variable declaration/definition. Some of these is caused by my unfamiliar with cmake and misunderstanding of TAs' code, and most others is because I'm not good at dealing with these kind of problems. After this, I feel my debugging skill is better. 
+
+Also, I'm more confident when merging git conflicts. 
 
 ## Feedback?
 
@@ -117,4 +185,4 @@ Only my personal opinions.
 
 ~2h visualization
 
-~1.5h code cleanup, and report. 
+~3h code cleanup, and report. 
