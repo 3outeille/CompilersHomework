@@ -76,7 +76,7 @@
   tar xvf cfe-8.0.1.src.tar.xz
   mv cfe-8.0.1.src llvm/tools/clang
   ```
-* Step 3) 编译并安装.这里在内存及硬盘充足的条件下,推荐`Debug`配置的编译,以方便进行调试.否则请采用`Release`配置的编译
+* Step 3) 编译并安装.这里在内存及硬盘充足的条件下,推荐`Debug`配置的编译,这更能让你体验"较大的项目"的编译过程.否则请采用`Release`配置的编译
   ``` bash
   mkdir llvm-build && cd llvm-build
   # Release
