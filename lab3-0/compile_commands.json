@@ -1,0 +1,27 @@
+[
+	{
+		"directory" : "/home/petergu/MyHome/USTCcomputer/2019Autumn/Compilers/compiler_cminus/lab3-0" ,
+		"command" : "c++ gcd_generator.cpp -o gcd_generator -I/home/petergu/MyHome/src/llvm-install/include -std=c++11  -fno-exceptions -fno-rtti -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROSs",
+		"file" : "gcd_generator.cpp"
+	},
+	{
+		"directory" : "/home/petergu/MyHome/USTCcomputer/2019Autumn/Compilers/compiler_cminus/lab3-0" ,
+		"command" : "c++ assign_generator.cpp -o assign_generator -I/home/petergu/MyHome/src/llvm-install/include -std=c++11  -fno-exceptions -fno-rtti -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROSs",
+		"file" : "assign_generator.cpp"
+	},
+	{
+		"directory" : "/home/petergu/MyHome/USTCcomputer/2019Autumn/Compilers/compiler_cminus/lab3-0" ,
+		"command" : "c++ if_generator.cpp -o if_generator -I/home/petergu/MyHome/src/llvm-install/include -std=c++11  -fno-exceptions -fno-rtti -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROSs",
+		"file" : "if_generator.cpp"
+	},
+	{
+		"directory" : "/home/petergu/MyHome/USTCcomputer/2019Autumn/Compilers/compiler_cminus/lab3-0" ,
+		"command" : "c++ while_generator.cpp -o while_generator -I/home/petergu/MyHome/src/llvm-install/include -std=c++11  -fno-exceptions -fno-rtti -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROSs",
+		"file" : "while_generator.cpp"
+	},
+	{
+		"directory" : "/home/petergu/MyHome/USTCcomputer/2019Autumn/Compilers/compiler_cminus/lab3-0" ,
+		"command" : "c++ call_generator.cpp -o call_generator -I/home/petergu/MyHome/src/llvm-install/include -std=c++11  -fno-exceptions -fno-rtti -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROSs",
+		"file" : "call_generator.cpp"
+	}
+]
