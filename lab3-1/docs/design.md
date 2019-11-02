@@ -159,6 +159,21 @@ $`\text{assign-expression} \rightarrow \text{var}\ \textbf{=}\ \text{expression}
 
 在语法树的实现中，我利用了C++继承较为灵活的特性，定义了各个符号，并且将语法树中的子节点定义为了成员变量便于你们访问。
 
+### 辅助类Scope
+
+在`include/cminus_builder.hpp`中，我还定义了一个用于存储作用域的类`Scope`。它的作用是辅助我们在遍历语法树时，管理不同作用域中的变量。它提供了以下接口：
+```cpp
+// 进入一个新的作用域
+void enter();
+// 退出一个作用域
+void exit();
+// 往当前作用域插入新的名字->值映射
+bool push(std::string name, llvm::Value *val);
+// 根据名字，寻找到值
+llvm::Value* find(std::string name);
+```
+你们需要根据语义合理调用`enter`与`exit`，并且在变量声明和使用时正确调用`push`与`find`。在类`CminusBuilder`中，有一个`Scope`类型的成员变量`scope`，它在初始化时已经将`input`、`output`等函数加入了作用域中。因此，你们在进行名字查找时不需要顾虑是否需要对特殊函数进行特殊操作。
+
 ## C-minus语义的扩展
 
 为了便于大家实现，我对C-minus语义做出进一步细化，有以下：

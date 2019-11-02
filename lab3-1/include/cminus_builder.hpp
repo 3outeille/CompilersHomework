@@ -43,10 +43,6 @@ public:
     return nullptr;
   }
 
-  bool in_global() {
-    return inner.size() == 1;
-  }
-
 private:
   std::vector<std::map<std::string, llvm::Value *>> inner;
 };
