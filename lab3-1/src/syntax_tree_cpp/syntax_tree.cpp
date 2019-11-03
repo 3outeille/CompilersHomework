@@ -2,13 +2,11 @@
 #include <cstring>
 #include <stack>
 #include <iostream>
-#ifdef DEBUG
 #define _SYNTAX_TREE_NODE_ERROR_ \
   std::cerr << "Abort due to node cast error."\
   "Contact with TAs to solve your problem."\
   << std::endl;\
   std::abort();
-#endif
 #define _STR_EQ(a, b) (strcmp((a), (b)) == 0)
 
 void syntax_tree::run_visitor(syntax_tree_visitor &visitor) {

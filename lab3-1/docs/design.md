@@ -2,7 +2,7 @@
 
 ## 简介
 
-本次实验使用了LLVM的C++接口来生成IR，因此实验框架是由C++编写的。为了便于大家进行实验，该框架自动完成了Flex、Bison生成的语法树到C++上的语法树的转换。并且，实验框架根据[访问者模式](#%E8%AE%BF%E9%97%AE%E8%80%85%E6%A8%A1%E5%BC%8F)设计了语法树，使得算法易于实现。
+本次实验使用了LLVM的C++接口来生成IR，因此实验框架是由C++编写的。为了便于大家进行实验，该框架自动完成了Flex、Bison生成的语法树（在`deps/analyzer`下）到C++上的语法树的转换。并且，实验框架根据[访问者模式](#%E8%AE%BF%E9%97%AE%E8%80%85%E6%A8%A1%E5%BC%8F)设计了语法树，使得算法易于实现。
 
 ## 如何运行
 
@@ -171,6 +171,8 @@ void exit();
 bool push(std::string name, llvm::Value *val);
 // 根据名字，寻找到值
 llvm::Value* find(std::string name);
+// 判断当前是否在全局作用域内
+bool in_global();
 ```
 你们需要根据语义合理调用`enter`与`exit`，并且在变量声明和使用时正确调用`push`与`find`。在类`CminusBuilder`中，有一个`Scope`类型的成员变量`scope`，它在初始化时已经将`input`、`output`等函数加入了作用域中。因此，你们在进行名字查找时不需要顾虑是否需要对特殊函数进行特殊操作。
 

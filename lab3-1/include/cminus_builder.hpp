@@ -24,6 +24,10 @@ public:
     inner.pop_back();
   }
 
+  bool in_global() {
+    return inner.size() == 1;
+  }
+
   // push a name to scope
   // return true if successful
   // return false if this name already exits
