@@ -502,7 +502,7 @@ void syntax_tree_printer::visit(syntax_program &node) {
   std::cout << "program" << std::endl;
   add_depth();
   for (auto decl: node.declarations) {
-    decl.get()->accept(*this);
+    decl->accept(*this);
   }
   remove_depth();
 }
