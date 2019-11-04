@@ -55,10 +55,8 @@ syntax_tree::transform_node_iter(SyntaxTreeNode* n) {
     node->type = TYPE_INT;
     // type-specifier IDENTIFIER SEMICOLON
     if (n->children_num == 3) {
-      node->isarray = false;
       node->id = n->children[1]->name;
     } else if (n->children_num == 6) {
-      node->isarray = true;
       node->id = n->children[1]->name;
       int num = std::stoi(n->children[3]->name);
       auto num_node = std::make_shared<syntax_num>();
@@ -517,7 +515,7 @@ void syntax_tree_printer::visit(syntax_num &node) {
 void syntax_tree_printer::visit(syntax_var_declaration &node) {
   _DEBUG_PRINT_N_(depth);
   std::cout << "var-declaration: " << node.id;
-  if (node.isarray) {
+  if (node.num != nullptr) {
     std::cout << "[]" << std::endl;
     add_depth();
     node.num->accept(*this);
