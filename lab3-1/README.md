@@ -2,23 +2,25 @@
 
 ## 实验内容
 
-本次实验中，我们需要使用LLVM将lab1和lab2中实现的词法与语法分析器（本实验中使用的版本为助教实现版本）得到的语法树翻译到正确的LLVM IR。
+本次实验中，我们需要使用LLVM将前序实验中得到的语法树翻译到正确的LLVM IR（为了减轻大家的工作量，本实验中使用的词法和语法分析器为助教实现版本，如没有特殊需求，你们不需要加入自己的实现版本）。
 
 ## 实验要求
 
 1. 阅读[C-minus语义](docs/cminus.md)与[框架介绍](docs/design.md)
 2. 学习[10/14课上的LLVM IR相关介绍](http://210.45.114.30/gbxu/notice_board/uploads/687bb53f37e5bc96bae3c2c27abe0460/llvm_ir%E5%8F%8A%E5%B7%A5%E5%85%B7%E9%93%BE%E4%BB%8B%E7%BB%8D.pdf)
 3. 本实验中，个人需要根据[组队规则](http://210.45.114.30/gbxu/notice_board/issues/140)组成队伍，然后合作完成实验。实验过程中，队员需要根据组长的要求，合理分工和讨论。
-4. 组长应当将组队学习和讨论的过程记录在`report/records.md`当中
-5. 本实验要根据[C-minus语义](docs/cminus.md)（本实验中进行了部分扩展），在助教提供的框架（[框架介绍](docs/design.md)介绍了对C-minus的一些扩展）上正确实现一个`C-minus`语言的编译器。
-6. 在实验中，你们只应该修改`src/cminusc/cminus_builder.cpp`，并可以添加新的全局变量来实现状态共享。
+4. 组长应当严格按照模板格式，将组队学习和讨论的过程记录在`report/records.md`当中，讨论至少要有一次。
+5. 本实验要根据[C-minus语义](docs/cminus.md)（本实验中进行了部分扩展），在助教提供的框架（[框架介绍](docs/design.md)介绍了对C-minus的一些扩展）上正确实现一个`C-minus`语言的IR生成器。
+6. 在实验实现中，你们只应该修改`src/cminusc/cminus_builder.cpp`，并添加新的全局变量来实现状态共享。
 7. 实验报告要写在`report/lab3-1_report.md`中
 8. 组长应在最后提交时，根据实验过程中的参与情况，填写`report/contribution.md`
  
 提示：你们可以参考Clang生成的llvm ir
 
+## 提交要求
 
-下面是你们要修改的文件的总结：
+1. 每一组的最终成果提交到队长的仓库
+2. 你们需要修改如下文件，并提交修改后的版本
 ```
 .
 ├── src
