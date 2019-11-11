@@ -3,8 +3,6 @@
 
 #include <stdio.h>
 
-#include "lab1_lexical_analyzer/lexical_analyzer.h"
-
 struct _SyntaxTreeNode {
 	struct _SyntaxTreeNode * parent;
 	struct _SyntaxTreeNode * children[1000];
