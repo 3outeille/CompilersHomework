@@ -164,7 +164,7 @@ C中，只能使用标准库中的`malloc`与`free`来进行内存分配，并�
 ### 语法树设计
 
 不同于C中每个非终结符与终结符对应同一种结点，在实验框架中的C++语法树中，大部分符号拥有了属于自己的类型。为此，我对原语法树做了一些修改，即将语法的第18条改为：
-$`\text{expression} \rightarrow \text{assign-expression}\text{var}\ \textbf{=}\ \text{expression}\ |\ \text{simple-expression}`$，并新增加一条：
+$`\text{expression} \rightarrow \text{assign-expression}\ |\ \text{simple-expression}`$，并新增加一条：
 $`\text{assign-expression} \rightarrow \text{var}\ \textbf{=}\ \text{expression}`$。这种改动并没有影响语言的语义，但是有利于我们构建类型。
 
 在语法树的实现中，我利用了C++继承较为灵活的特性，定义了各个符号，并且将语法树中的子节点定义为了成员变量便于你们访问。
