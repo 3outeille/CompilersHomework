@@ -10,9 +10,9 @@ using namespace llvm;
   std::cout << std::string(N, '-');\
 }
 void CminusBuilder::visit(syntax_program &node) {
+	add_depth();
 	_DEBUG_PRINT_N_(depth);
 	std::cout << "program" << std::endl;
-	add_depth();
 	for (auto decl: node.declarations) {
 		decl->accept(*this);
 	}
@@ -23,12 +23,18 @@ void CminusBuilder::visit(syntax_num &node) {}
 
 void CminusBuilder::visit(syntax_var_declaration &node) {
 	add_depth();
-	// If declaration is variable
+	// declaration is variable
 	if (node.num == nullptr) {
 		_DEBUG_PRINT_N_(depth);
 		std::cout << "var-declaration: " << node.id;
-		GlobalVariable* gvar = new GlobalVariable(*module, Type::getInt32Ty(context), false, GlobalValue::CommonLinkage, 0, node.id);
-
+		ConstantInt* const_int = ConstantInt::get(context, APInt(32, 0));
+		GlobalVariable* gvar = new GlobalVariable(*module, 
+				PointerType::getInt32Ty(context), 
+				false, 
+				GlobalValue::CommonLinkage, 
+				const_int, 
+				node.id);
+		gvar->setAlignment(4);
 	}
 	// declaration is array
 	else {
@@ -36,25 +42,80 @@ void CminusBuilder::visit(syntax_var_declaration &node) {
 		std::cout << "var-declaration: " << node.id << "[" << node.num->value << "]";
 		ArrayType* arrType = ArrayType::get(IntegerType::get(context, 32), node.num->value);
 		ConstantAggregateZero* constarr = ConstantAggregateZero::get(arrType);
-		GlobalVariable* gvar = new GlobalVariable(*module, arrType, false, GlobalValue::CommonLinkage, constarr, node.id);
+		GlobalVariable* gvar = new GlobalVariable(*module, 
+				arrType, 
+				false, 
+				GlobalValue::CommonLinkage, 
+				constarr, 
+				node.id);
 	}
-	// need to check multiple-defination here!
 	std::cout << std::endl;
 	remove_depth();
 }
 
 void CminusBuilder::visit(syntax_fun_declaration &node) {
-	_DEBUG_PRINT_N_(depth);
-	std::cout << "fun-declaration: " << node.id << std::endl;
 	add_depth();
-	std::vector<Type *> Ints(2, Type::getInt32Ty(context));
-	auto function = Function::Create(FunctionType::get(Type::getInt32Ty(context), Ints, false), GlobalValue::LinkageTypes::ExternalLinkage, node.id, *module);
+	_DEBUG_PRINT_N_(depth);
+	scope.enter();
+	std::cout << "fun-declaration: " << node.id << std::endl;
+	std::vector<Type *> Vars;
+	for(auto param: node.params) {
+		if (param->isarray) {
+			Vars.push_back(PointerType::getInt32Ty(context));
+		}
+		else {
+			Vars.push_back(Type::getInt32Ty(context));
+		}
+	}
+	auto function = Function::Create(FunctionType::get(Type::getInt32Ty(context), Vars, false), 
+			GlobalValue::LinkageTypes::ExternalLinkage, 
+			node.id, 
+			*module);
 	auto bb = BasicBlock::Create(context, "entry", function);
 	builder.SetInsertPoint(bb);
+	// allocate space for function params, and add to symbol table(scope)
+	auto arg = function->arg_begin();
+	for(auto param: node.params) {
+		if (arg == function->arg_end()) {
+			std::cout << "Fatal error: parameter number different!!" << std::endl;
+		}
+		if (param->isarray) {
+			//auto arrType = ArrayType::get()
+			//auto param_arr = builder.Create
+			auto param_var = builder.CreateAlloca(PointerType::getInt32Ty(context));
+			//builder.CreatePtrToInt
+			scope.push(param->id, param_var);
+			builder.CreateStore(arg, param_var);
+		}
+		else {
+			auto param_var = builder.CreateAlloca(Type::getInt32Ty(context)); 
+			scope.push(param->id, param_var);
+			builder.CreateStore(arg, param_var);
+		}
+		arg++;
+	}
+
+
+	node.compound_stmt->accept(*this);
+
+	//// allocate the return register
+	//if(node.type != TYPE_VOID) {
+		//auto retAlloca = builder.CreateAlloca(Type::getInt32Ty(context));
+	//}
+
+	// maybe need this? in case no explicit return?
+	if(node.type == TYPE_VOID) {
+		builder.CreateRetVoid();
+	}
+	scope.exit();
 	remove_depth();
 }
 
-void CminusBuilder::visit(syntax_param &node) {}
+void CminusBuilder::visit(syntax_param &node) {
+	//node.id
+	//node.isarray
+	//node.type
+}
 
 void CminusBuilder::visit(syntax_compound_stmt &node) {}
 
