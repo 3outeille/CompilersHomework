@@ -5,6 +5,10 @@
 // to store state
 using namespace llvm;  
 // seems to need a global variable to record whether the last declaration is main
+// this is for array to get basicblock ref. correctly
+BasicBlock* curr_block;
+// may be this?
+Function* curr_func;
 
 #define _DEBUG_PRINT_N_(N) {\
   std::cout << std::string(N, '-');\
@@ -59,7 +63,7 @@ void CminusBuilder::visit(syntax_fun_declaration &node) {
 	scope.enter();
 	std::cout << "fun-declaration: " << node.id << std::endl;
 	std::vector<Type *> Vars;
-	for(auto param: node.params) {
+	for (auto param: node.params) {
 		if (param->isarray) {
 			Vars.push_back(PointerType::getInt32Ty(context));
 		}
@@ -67,15 +71,18 @@ void CminusBuilder::visit(syntax_fun_declaration &node) {
 			Vars.push_back(Type::getInt32Ty(context));
 		}
 	}
-	auto function = Function::Create(FunctionType::get(Type::getInt32Ty(context), Vars, false), 
+	auto functype = node.type == TYPE_INT ? Type::getInt32Ty(context) : Type::getVoidTy(context);
+	auto function = Function::Create(FunctionType::get(functype, Vars, false), 
 			GlobalValue::LinkageTypes::ExternalLinkage, 
 			node.id, 
 			*module);
+	curr_func = function;
 	auto bb = BasicBlock::Create(context, "entry", function);
 	builder.SetInsertPoint(bb);
+	curr_block = bb;
 	// allocate space for function params, and add to symbol table(scope)
 	auto arg = function->arg_begin();
-	for(auto param: node.params) {
+	for (auto param: node.params) {
 		if (arg == function->arg_end()) {
 			std::cout << "Fatal error: parameter number different!!" << std::endl;
 		}
@@ -117,7 +124,32 @@ void CminusBuilder::visit(syntax_param &node) {
 	//node.type
 }
 
-void CminusBuilder::visit(syntax_compound_stmt &node) {}
+void CminusBuilder::visit(syntax_compound_stmt &node) {
+	add_depth();
+	_DEBUG_PRINT_N_(depth);
+	std::cout << "compound_stmt" << std::endl;
+	// process var-declaration
+	for (auto var_decl: node.local_declarations) {
+		if (var_decl->type == TYPE_VOID) {
+			std::cout << "Error: no void type variable or array is allowed!" << std::endl;
+		}
+		// array declaration
+		if (var_decl->num != nullptr) {
+			auto arrType = ArrayType::get(IntegerType::get(context, 32), var_decl->num->value);
+			auto arrptr = new AllocaInst(arrType, 0, "", curr_block);
+		}
+		// normal variable declaration
+		else {
+			auto var = builder.CreateAlloca(Type::getInt32Ty(context));
+			scope.push(var_decl->id, var);
+		}
+		//var_decl.
+	}
+	for (auto stmt: node.statement_list) {
+		stmt->accept(*this);
+	}
+	remove_depth();
+}
 
 void CminusBuilder::visit(syntax_expresion_stmt &node) {}
 
