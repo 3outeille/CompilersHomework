@@ -7,8 +7,9 @@ using namespace llvm;
 // seems to need a global variable to record whether the last declaration is main
 // this is for array to get basicblock ref. correctly
 BasicBlock* curr_block;
-// may be this?
+// for BasicBlock::Create to get function ref. 
 Function* curr_func;
+int label_cnt = 0;
 
 #define _DEBUG_PRINT_N_(N) {\
   std::cout << std::string(N, '-');\
@@ -33,7 +34,7 @@ void CminusBuilder::visit(syntax_var_declaration &node) {
 		std::cout << "var-declaration: " << node.id;
 		ConstantInt* const_int = ConstantInt::get(context, APInt(32, 0));
 		GlobalVariable* gvar = new GlobalVariable(*module, 
-				PointerType::getInt32Ty(context), 
+				PointerType::getInt32PtrTy(context), 
 				false, 
 				GlobalValue::CommonLinkage, 
 				const_int, 
@@ -65,7 +66,7 @@ void CminusBuilder::visit(syntax_fun_declaration &node) {
 	std::vector<Type *> Vars;
 	for (auto param: node.params) {
 		if (param->isarray) {
-			Vars.push_back(PointerType::getInt32Ty(context));
+			Vars.push_back(PointerType::getInt32PtrTy(context));
 		}
 		else {
 			Vars.push_back(Type::getInt32Ty(context));
@@ -89,7 +90,7 @@ void CminusBuilder::visit(syntax_fun_declaration &node) {
 		if (param->isarray) {
 			//auto arrType = ArrayType::get()
 			//auto param_arr = builder.Create
-			auto param_var = builder.CreateAlloca(PointerType::getInt32Ty(context));
+			auto param_var = builder.CreateAlloca(PointerType::getInt32PtrTy(context));
 			//builder.CreatePtrToInt
 			scope.push(param->id, param_var);
 			builder.CreateStore(arg, param_var);
@@ -102,6 +103,7 @@ void CminusBuilder::visit(syntax_fun_declaration &node) {
 		arg++;
 	}
 
+	label_cnt = 0;
 
 	node.compound_stmt->accept(*this);
 
@@ -143,7 +145,6 @@ void CminusBuilder::visit(syntax_compound_stmt &node) {
 			auto var = builder.CreateAlloca(Type::getInt32Ty(context));
 			scope.push(var_decl->id, var);
 		}
-		//var_decl.
 	}
 	for (auto stmt: node.statement_list) {
 		stmt->accept(*this);
@@ -153,7 +154,46 @@ void CminusBuilder::visit(syntax_compound_stmt &node) {
 
 void CminusBuilder::visit(syntax_expresion_stmt &node) {}
 
-void CminusBuilder::visit(syntax_selection_stmt &node) {}
+void CminusBuilder::visit(syntax_selection_stmt &node) {
+	add_depth();
+	_DEBUG_PRINT_N_(depth);
+	std::cout << "selection_stmt" << std::endl;
+	// first process the expresstion(condition)
+	node.expression->accept(*this);
+	// actually this is not needed, as llvm will automatically generate different label name
+	char labelname[100];
+	BasicBlock* trueBB;
+	BasicBlock* falseBB;
+	// if-statement
+	sprintf(labelname, "trueBB_%d", ++label_cnt);
+	trueBB = BasicBlock::Create(context, labelname, curr_func);
+	// optional else-statement
+	if (node.else_statement != nullptr) {
+		sprintf(labelname, "falseBB_%d", ++label_cnt);
+		falseBB = BasicBlock::Create(context, labelname, curr_func);
+	}
+	// the conditional jump
+	// TODO: where does the condition come from?
+	//builder.CreateCondBr(condition, trueBB, falseBB);
+	// do the inner if and else statement
+	builder.SetInsertPoint(trueBB);
+	node.if_statement->accept(*this);
+	if (node.else_statement != nullptr) {
+		builder.SetInsertPoint(falseBB);
+		node.else_statement->accept(*this);
+	}
+	// unconditional jump to make ends meet
+	sprintf(labelname, "endBB_%d", ++label_cnt);
+	auto endBB = BasicBlock::Create(context, labelname, curr_func);
+	builder.SetInsertPoint(trueBB);
+	builder.CreateBr(endBB);
+	if (node.else_statement != nullptr) {
+		builder.SetInsertPoint(falseBB);
+		builder.CreateBr(endBB);
+	}
+	builder.SetInsertPoint(endBB);
+	remove_depth();
+}
 
 void CminusBuilder::visit(syntax_iteration_stmt &node) {}
 
