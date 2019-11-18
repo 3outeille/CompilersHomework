@@ -155,16 +155,23 @@ void CminusBuilder::visit(syntax_compound_stmt &node) {
 }
 
 void CminusBuilder::visit(syntax_expresion_stmt &node) {
+	add_depth();
+	_DEBUG_PRINT_N_(depth);
 	std::cout << "*generate dummy expression stmt" << std::endl;
 	// dummy for my testing
 	expression = builder.CreateICmpEQ(ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)), ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)));
+	return;
+
+	std::cout << "expression_stmt" << std::endl;
+	node.expression->accept(*this);
+	remove_depth();
 }
 
 void CminusBuilder::visit(syntax_selection_stmt &node) {
 	add_depth();
 	_DEBUG_PRINT_N_(depth);
 	std::cout << "selection_stmt" << std::endl;
-	// first process the expresstion(condition)
+	// first process the expression(condition)
 	node.expression->accept(*this);
 	// actually this is not needed, as llvm will automatically generate different label name
 	char labelname[100];

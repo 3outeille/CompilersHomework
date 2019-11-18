@@ -74,3 +74,5 @@ syntree/*
 .ipynb_*
 
 *.swp
+
+.vscode
