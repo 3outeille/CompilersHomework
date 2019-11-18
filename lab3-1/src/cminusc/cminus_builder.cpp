@@ -9,6 +9,8 @@ using namespace llvm;
 BasicBlock* curr_block;
 // for BasicBlock::Create to get function ref. 
 Function* curr_func;
+// record the expression, to be used in while, if and return statements
+Value* expression;
 int label_cnt = 0;
 
 #define _DEBUG_PRINT_N_(N) {\
@@ -34,7 +36,7 @@ void CminusBuilder::visit(syntax_var_declaration &node) {
 		std::cout << "var-declaration: " << node.id;
 		ConstantInt* const_int = ConstantInt::get(context, APInt(32, 0));
 		GlobalVariable* gvar = new GlobalVariable(*module, 
-				PointerType::getInt32PtrTy(context), 
+				PointerType::getInt32Ty(context), 
 				false, 
 				GlobalValue::CommonLinkage, 
 				const_int, 
@@ -152,7 +154,11 @@ void CminusBuilder::visit(syntax_compound_stmt &node) {
 	remove_depth();
 }
 
-void CminusBuilder::visit(syntax_expresion_stmt &node) {}
+void CminusBuilder::visit(syntax_expresion_stmt &node) {
+	std::cout << "*generate dummy expression stmt" << std::endl;
+	// dummy for my testing
+	expression = builder.CreateICmpEQ(ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)), ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)));
+}
 
 void CminusBuilder::visit(syntax_selection_stmt &node) {
 	add_depth();
@@ -173,8 +179,8 @@ void CminusBuilder::visit(syntax_selection_stmt &node) {
 		falseBB = BasicBlock::Create(context, labelname, curr_func);
 	}
 	// the conditional jump
-	// TODO: where does the condition come from?
-	//builder.CreateCondBr(condition, trueBB, falseBB);
+	node.expression->accept(*this);
+	builder.CreateCondBr(expression, trueBB, falseBB);
 	// do the inner if and else statement
 	builder.SetInsertPoint(trueBB);
 	node.if_statement->accept(*this);
@@ -195,17 +201,69 @@ void CminusBuilder::visit(syntax_selection_stmt &node) {
 	remove_depth();
 }
 
-void CminusBuilder::visit(syntax_iteration_stmt &node) {}
+void CminusBuilder::visit(syntax_iteration_stmt &node) {
+	add_depth();
+	_DEBUG_PRINT_N_(depth);
+	std::cout << "iteration_stmt" << std::endl;
+	// iteration_stmt: 
+	// start:
+	// 	if expression goto body else goto end
+	// body:
+	// 	statement
+	// 	goto start
+	// end:
+	char labelname[100];
+	sprintf(labelname, "startBB_%d", ++label_cnt);
+	auto startBB = BasicBlock::Create(context, labelname, curr_func);
+	sprintf(labelname, "bodyBB_%d", ++label_cnt);
+	auto bodyBB = BasicBlock::Create(context, labelname, curr_func);
+	sprintf(labelname, "endBB_%d", ++label_cnt);
+	auto endBB = BasicBlock::Create(context, labelname, curr_func);
+	builder.SetInsertPoint(startBB);
+	node.expression->accept(*this);
+	builder.CreateCondBr(expression, bodyBB, endBB);
+	builder.SetInsertPoint(bodyBB);
+	node.statement->accept(*this);
+	builder.CreateBr(startBB);
+	builder.SetInsertPoint(endBB);
+	remove_depth();
+}
 
-void CminusBuilder::visit(syntax_return_stmt &node) {}
+void CminusBuilder::visit(syntax_return_stmt &node) {
+	add_depth();
+	_DEBUG_PRINT_N_(depth);
+	std::cout << "return_stmt" << std::endl;
+	if (node.expression != nullptr) {
+		node.expression->accept(*this);
+		// TODO: NEED ZEXT from i1 to i32 here!!
+		// and in other expression places need to TRUNC i32 to i1 !!
+		builder.CreateRet(expression);
+	}
+	else {
+		builder.CreateRetVoid();
+	}
+	remove_depth();
+}
 
 void CminusBuilder::visit(syntax_var &node) {}
 
-void CminusBuilder::visit(syntax_assign_expression &node) {}
+void CminusBuilder::visit(syntax_assign_expression &node) {
+	std::cout << "*generate dummy expression" << std::endl;
+	// dummy for my testing
+	expression = builder.CreateICmpEQ(ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)), ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)));
+}
 
-void CminusBuilder::visit(syntax_simple_expression &node) {}
+void CminusBuilder::visit(syntax_simple_expression &node) {
+	std::cout << "*generate dummy expression" << std::endl;
+	// dummy for my testing
+	expression = builder.CreateICmpEQ(ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)), ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)));
+}
 
-void CminusBuilder::visit(syntax_additive_expression &node) {}
+void CminusBuilder::visit(syntax_additive_expression &node) {
+	std::cout << "*generate dummy expression" << std::endl;
+	// dummy for my testing
+	expression = builder.CreateICmpEQ(ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)), ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)));
+}
 
 void CminusBuilder::visit(syntax_term &node) {}
 

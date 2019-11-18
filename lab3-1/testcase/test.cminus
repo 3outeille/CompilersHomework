@@ -1,0 +1,62 @@
+int arrrr[100];
+int hello;
+int xx;
+
+int gcd (int u, int v) {
+  if (v == 0) return u;
+  else return gcd(v, u - u / v * v);
+}
+
+int ret(void) {
+	int i;
+	return i;
+}
+
+void nope(int u, int v, int x[], int y[], int t) {
+	int xxx[100];
+	int yyy[100];
+	int zzz;
+	xxx[1] = 10;
+	xxx[10] = 20;
+}
+
+void loop(void) {
+	int i;
+	i = 0;
+	while(i < 10) {
+		int z;
+		i = i + 1;
+	}
+}
+
+void main(void) {
+  int x;
+  int y;
+  int temp;
+  x = 1;
+  y = 100;
+  x = input();
+  y = input();
+  if (x < y) {
+    temp = x;
+    x = y;
+    y = temp;
+  }
+  if ( x > y ) {
+	  if(x > y) {
+		  int zz;
+		  x = 1;
+	  }
+	  else {
+		  int yy;
+		  x = 2;
+	  }
+	  y = 1;
+  }
+  else {
+	  x = 1;
+  }
+  temp = gcd(x, y);
+  output(temp);
+  return;
+}
