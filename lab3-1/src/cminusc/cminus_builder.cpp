@@ -327,7 +327,7 @@ void CminusBuilder::visit(syntax_var &node) {
 	//node.id
 	// dummy for testing assign_expression
 
-	std::cout << "*generate dummy expression for var - " << node.id << std::endl;
+	std::cout << "*generate dummy expression - var - " << node.id << std::endl;
 	expression = ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10));
 }
 
@@ -347,19 +347,50 @@ void CminusBuilder::visit(syntax_assign_expression &node) {
 }
 
 void CminusBuilder::visit(syntax_simple_expression &node) {
+	add_depth();
+	_DEBUG_PRINT_N_(depth);
+	std::cout << "simple_expression" << std::endl;
+
+	// simple-expression→additive-expression
 	node.additive_expression_l->accept(*this);
-	auto lhsAlloca = builder.CreateAlloca(Type::getInt32Ty(context));
-	std::cout << "*generate dummy expression" << std::endl;
-	// dummy for my testing
-	//expression = ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10));
-	expression = builder.CreateICmpNE(ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)), ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)));
+	auto lVal = expression;
+
+	// simple-expression→additive-expression relop additive-expression
+	if (node.additive_expression_r != nullptr) {
+		node.additive_expression_r->accept(*this);
+		auto rVal = expression;
+		switch (node.op)
+		{
+		case OP_LE:
+			expression = builder.CreateICmpSLE(lVal, rVal);
+			break;
+		case OP_LT:
+			expression = builder.CreateICmpSLT(lVal, rVal);
+			break;
+		case OP_GT:
+			expression = builder.CreateICmpSGT(lVal, rVal);
+			break;
+		case OP_GE:
+			expression = builder.CreateICmpSGE(lVal, rVal);
+			break;
+		case OP_EQ:
+			expression = builder.CreateICmpEQ(lVal, rVal);
+			break;
+		case OP_NEQ:
+			expression = builder.CreateICmpNE(lVal, rVal);
+			break;
+		default:
+			break;
+		}
+	}
+	remove_depth();
 }
 
 void CminusBuilder::visit(syntax_additive_expression &node) {
-	std::cout << "*generate dummy expression" << std::endl;
+	std::cout << "*generate dummy expression - additive_expression" << std::endl;
 	// dummy for my testing
-	//expression = ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10));
-	expression = builder.CreateICmpNE(ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)), ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)));
+	expression = ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10));
+	// expression = builder.CreateICmpNE(ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)), ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)));
 }
 
 void CminusBuilder::visit(syntax_term &node) {}
