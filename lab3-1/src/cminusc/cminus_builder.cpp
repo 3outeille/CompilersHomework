@@ -201,7 +201,7 @@ void CminusBuilder::visit(syntax_selection_stmt &node) {
 	BasicBlock* trueBB;
 	BasicBlock* falseBB;
 	auto expri1 = builder.CreateICmpNE(expression, ConstantInt::get(Type::getInt32Ty(context), 0, true));
-	// record the current block and  for add the br later
+	// record the current block, for add the br later
 	BasicBlock* orig_block = curr_block;
 	// create the conditional jump CondBr
 	//auto exprAlloca = builder.CreateAlloca(Type::getInt1Ty(context));
@@ -232,10 +232,15 @@ void CminusBuilder::visit(syntax_selection_stmt &node) {
 		node.else_statement->accept(*this);
 		falseBB_location = curr_block;
 	}
-	builder.SetInsertPoint(orig_block);
-	builder.CreateCondBr(expri1, trueBB, falseBB);
 	sprintf(labelname, "selEndBB_%d", label_now);
 	auto endBB = BasicBlock::Create(context, labelname, curr_func);
+	builder.SetInsertPoint(orig_block);
+	if (node.else_statement != nullptr) {
+		builder.CreateCondBr(expri1, trueBB, falseBB);
+	}
+	else {
+		builder.CreateCondBr(expri1, trueBB, endBB);
+	}
 	// unconditional jump to make ends meet
 	builder.SetInsertPoint(trueBB_location);
 	builder.CreateBr(endBB);
