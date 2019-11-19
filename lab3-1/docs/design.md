@@ -184,7 +184,32 @@ llvm::Value* find(std::string name);
 // 判断当前是否在全局作用域内
 bool in_global();
 ```
-你们需要根据语义合理调用`enter`与`exit`，并且在变量声明和使用时正确调用`push`与`find`。在类`CminusBuilder`中，有一个`Scope`类型的成员变量`scope`，它在初始化时已经将`input`、`output`等函数加入了作用域中。因此，你们在进行名字查找时不需要顾虑是否需要对特殊函数进行特殊操作。
+你们需要根据语义合理调用`enter`与`exit`，并且在变量声明和使用时正确调用`push`与`find`。
+在类`CminusBuilder`中，有一个`Scope`类型的成员变量`scope`，它在初始化时已经将`input`、`output`等函数加入了作用域中。因此，你们在进行名字查找时不需要顾虑是否需要对特殊函数进行特殊操作。
+
+使用示例（仅作使用参考，实际使用要考虑遍历过程）：
+```cpp
+// 如果遇到compound-stmt需要进入新的作用域
+scope.enter();
+
+...
+
+// 在作用域中加入变量
+std::string name = "foo";
+llvm::Value *val = builder.createAlloca(TYPE32);
+scope.push(name, val);
+
+...
+
+// 寻找变量
+std::string name = "foo";
+llvm::Value *val = scope.find(name);
+
+...
+
+// 当前作用域结束，退出
+scope.exit();
+```
 
 ## C-minus语义的扩展
 
