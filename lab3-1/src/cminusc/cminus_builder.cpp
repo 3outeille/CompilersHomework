@@ -325,13 +325,25 @@ void CminusBuilder::visit(syntax_return_stmt &node) {
 
 void CminusBuilder::visit(syntax_var &node) {
 	//node.id
+	// dummy for testing assign_expression
+
+	std::cout << "*generate dummy expression for var - " << node.id << std::endl;
+	expression = ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10));
 }
 
 void CminusBuilder::visit(syntax_assign_expression &node) {
-	std::cout << "*generate dummy expression" << std::endl;
+	// std::cout << "*generate dummy expression" << std::endl;
 	// dummy for my testing
 	//expression = ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10));
-	expression = builder.CreateICmpNE(ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)), ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)));
+	// expression = builder.CreateICmpNE(ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)), ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)));
+
+	add_depth();
+	_DEBUG_PRINT_N_(depth);
+	std::cout << "assign_expression" << std::endl;
+
+	node.expression->accept(*this);
+	node.var->accept(*this);
+	remove_depth();
 }
 
 void CminusBuilder::visit(syntax_simple_expression &node) {
