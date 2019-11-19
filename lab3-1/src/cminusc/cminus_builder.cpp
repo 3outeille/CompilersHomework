@@ -339,8 +339,17 @@ void CminusBuilder::visit(syntax_var &node) {
 	// dummy for testing assign_expression
 
 	std::cout << "*generate dummy expression - var - " << node.id << std::endl;
-	auto tempAlloca = builder.CreateAlloca(Type::getInt32Ty(context));
-	builder.CreateStore(expression, tempAlloca);
+	//auto tempAlloca = builder.CreateAlloca(Type::getInt32Ty(context));
+	//builder.CreateStore(expression, tempAlloca);	
+	if(node.expression==nullptr){
+		expression=scope.find(node.id);
+	}
+	else{
+		node.expression->accept(*this);
+		auto tempAlloca=scope.find(node.id);
+		auto Offset=builder.CreateMul(expression,tempAlloca->getType);//not done
+		expression=builder.CreateAdd(tempAlloca,Offset);
+	}
 }
 
 void CminusBuilder::visit(syntax_assign_expression &node) {
@@ -354,7 +363,9 @@ void CminusBuilder::visit(syntax_assign_expression &node) {
 	std::cout << "assign_expression" << std::endl;
 
 	node.expression->accept(*this);
+	auto val=expression;
 	node.var->accept(*this);
+	builder.CreateStore(val,expression);
 	remove_depth();
 }
 
