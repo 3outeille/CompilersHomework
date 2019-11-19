@@ -431,8 +431,28 @@ void CminusBuilder::visit(syntax_additive_expression &node) {
 }
 
 void CminusBuilder::visit(syntax_term &node) {
-	std::cout << "*generate dummy expression - term" << std::endl;
-	expression = ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10));
+	add_depth();
+	_DEBUG_PRINT_N_(depth);
+	std::cout << "term" << std::endl;
+
+	if (node.term == nullptr) {
+		node.factor->accept(*this);
+	}
+	else {
+		node.term->accept(*this);
+		Value* lhs = expression;
+		node.factor->accept(*this);
+		Value* rhs = expression;
+		switch (node.op) {
+			case OP_MUL:
+				expression = builder.CreateMul(lhs, rhs);
+				break;
+			case OP_DIV:
+				expression = builder.CreateUDiv(lhs, rhs);
+				break;
+		}
+	}
+	remove_depth();
 }
 
 void CminusBuilder::visit(syntax_call &node) {}
