@@ -83,6 +83,7 @@ int main(int argc, char **argv) {
   auto tree = syntax_tree(s);
   CminusBuilder builder;
   tree.run_visitor(builder);
+  std::cout << "In main: run visitor completed. " << std::endl;
   auto mod = builder.build();
   mod->setSourceFileName(input_path);
 
