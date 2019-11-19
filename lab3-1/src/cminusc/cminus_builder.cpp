@@ -339,7 +339,8 @@ void CminusBuilder::visit(syntax_var &node) {
 	// dummy for testing assign_expression
 
 	std::cout << "*generate dummy expression - var - " << node.id << std::endl;
-	expression = ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10));
+	auto tempAlloca = builder.CreateAlloca(Type::getInt32Ty(context));
+	builder.CreateStore(expression, tempAlloca);
 }
 
 void CminusBuilder::visit(syntax_assign_expression &node) {
@@ -358,6 +359,10 @@ void CminusBuilder::visit(syntax_assign_expression &node) {
 }
 
 void CminusBuilder::visit(syntax_simple_expression &node) {
+	add_depth();
+	_DEBUG_PRINT_N_(depth);
+	std::cout << "simple_expression" << std::endl;
+
 	if (node.additive_expression_r == nullptr) {
 		node.additive_expression_l->accept(*this);
 	}
@@ -387,6 +392,7 @@ void CminusBuilder::visit(syntax_simple_expression &node) {
 				break;
 		}
 	}
+	remove_depth();
 	//auto lhsAlloca = builder.CreateAlloca(Type::getInt32Ty(context));
 	//auto rhsAlloca = builder.CreateAlloca(Type::getInt32Ty(context));
 	//std::cout << "*generate dummy expression" << std::endl;
@@ -396,8 +402,12 @@ void CminusBuilder::visit(syntax_simple_expression &node) {
 }
 
 void CminusBuilder::visit(syntax_additive_expression &node) {
-	if (node.term == nullptr) {
-		node.additive_expression->accept(*this);
+	add_depth();
+	_DEBUG_PRINT_N_(depth);
+	std::cout << "additive_expression" << std::endl;
+
+	if (node.additive_expression == nullptr) {
+		node.term->accept(*this);
 	}
 	else {
 		node.additive_expression->accept(*this);
@@ -413,12 +423,16 @@ void CminusBuilder::visit(syntax_additive_expression &node) {
 				break;
 		}
 	}
+	remove_depth();
 	//std::cout << "*generate dummy expression" << std::endl;
 	// dummy for my testing
 	//expression = ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10));
 	//expression = builder.CreateICmpNE(ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)), ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)));
 }
 
-void CminusBuilder::visit(syntax_term &node) {}
+void CminusBuilder::visit(syntax_term &node) {
+	std::cout << "*generate dummy expression - term" << std::endl;
+	expression = ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10));
+}
 
 void CminusBuilder::visit(syntax_call &node) {}
