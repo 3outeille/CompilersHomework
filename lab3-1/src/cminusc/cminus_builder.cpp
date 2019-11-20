@@ -209,7 +209,7 @@ void CminusBuilder::visit(syntax_selection_stmt &node) {
 	char labelname[100];
 	BasicBlock* trueBB;
 	BasicBlock* falseBB;
-	auto expri1 = builder.CreateICmpNE(expression, ConstantInt::get(Type::getInt32Ty(context), 0, true));
+	auto expri1 = builder.CreateICmpNE(expression, ConstantInt::get(expression->getType(), 0, true));
 	// record the current block, for add the br later
 	BasicBlock* orig_block = curr_block;
 	// create the conditional jump CondBr
@@ -292,7 +292,7 @@ void CminusBuilder::visit(syntax_iteration_stmt &node) {
 	curr_block = startBB;
 	curr_op = LOAD;
 	node.expression->accept(*this);
-	auto expri1 = builder.CreateICmpNE(expression, ConstantInt::get(Type::getInt32Ty(context), 0, true));
+	auto expri1 = builder.CreateICmpNE(expression, ConstantInt::get(expression->getType(), 0, true));
 	sprintf(labelname, "loopBodyBB_%d", label_now);
 	auto bodyBB = BasicBlock::Create(context, labelname, curr_func);
 	builder.SetInsertPoint(bodyBB);
@@ -346,7 +346,7 @@ void CminusBuilder::visit(syntax_return_stmt &node) {
 void CminusBuilder::visit(syntax_var &node) {
 	add_depth();
 	_DEBUG_PRINT_N_(depth);
-	std::cout << "var: " << node.id << " op: " << curr_op << std::endl;
+	std::cout << "var: " << node.id << " op: " << (curr_op == LOAD ? "LOAD" : "STORE") << std::endl;
 	switch (curr_op) {
 		case LOAD: {
 			if (scope.in_global()) {
@@ -380,7 +380,14 @@ void CminusBuilder::visit(syntax_var &node) {
 				if (node.expression == nullptr) {
 					// variable
 					auto alloca = scope.find(node.id);
-					builder.CreateStore(expression, alloca);
+					Value* expr;
+					if(expression->getType() == Type::getInt1Ty(context)) {
+						expr = builder.CreateIntCast(expression, Type::getInt32Ty(context), false);
+					}
+					else {
+						expr = expression;
+					}
+					builder.CreateStore(expr, alloca);
 				}
 				else{
 					// array
@@ -421,11 +428,11 @@ void CminusBuilder::visit(syntax_assign_expression &node) {
 }
 
 void CminusBuilder::visit(syntax_simple_expression &node) {
-	std::cout << "*generate dummy expression" << std::endl;
-	 //dummy for my testing
-	expression = ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10));
-	expression = builder.CreateICmpNE(ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)), ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)));
-	return;
+	//std::cout << "*generate dummy expression" << std::endl;
+	////dummy for my testing
+	//expression = ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10));
+	//expression = builder.CreateICmpNE(ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)), ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)));
+	//return;
 
 	add_depth();
 	_DEBUG_PRINT_N_(depth);
