@@ -114,11 +114,6 @@ int main(int argc, char **argv) {
   std::unique_ptr<legacy::FunctionPassManager> FPM;
   FPM.reset(new legacy::FunctionPassManager(mod.get()));
   FPM->add(createVerifierPass());
-  FPM->doInitialization();
-  for (llvm::Function& F: *mod) {
-    FPM->run(F);
-  }
-  FPM->doFinalization();
 
   llvm::TargetLibraryInfoImpl TLII(Triple(mod->getTargetTriple()));
   PM.add(new TargetLibraryInfoWrapperPass(TLII));
@@ -149,8 +144,21 @@ int main(int argc, char **argv) {
     PM.run(*mod);
     mod->print(*output_ostream, nullptr);
     output_file->keep();
+
+    FPM->doInitialization();
+    for (llvm::Function& F: *mod) {
+      FPM->run(F);
+    }
+    FPM->doFinalization();
+
     return 0;
   } else {
+    FPM->doInitialization();
+    for (llvm::Function& F: *mod) {
+      FPM->run(F);
+    }
+    FPM->doFinalization();
+
     auto obj_file_name = target_path + ".o";
     auto obj_file = llvm::make_unique<llvm::ToolOutputFile>(obj_file_name, error_msg, llvm::sys::fs::F_None);
     if(error_msg.value()) {
@@ -162,6 +170,7 @@ int main(int argc, char **argv) {
     TPC.addISelPasses();
     TPC.addMachinePasses();
     TPC.setInitialized();
+
     LLVMTM.addAsmPrinter(PM, *obj_ostream, nullptr, TargetMachine::CGFT_ObjectFile, MMI->getContext());
     PM.add(createFreeMachineFunctionPass());
     PM.add(createVerifierPass());
