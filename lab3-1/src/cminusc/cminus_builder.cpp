@@ -369,16 +369,12 @@ void CminusBuilder::visit(syntax_var &node) {
 				}
 				else{
 					// array
-					// node.expression->accept(*this);
-					// auto tempAlloca=scope.find(node.id);
-					// Type* tp=tempAlloca->getType();
-					// if(tp->isVoidTy()){//void
-					// 	expression=tempAlloca;
-					// }
-					// else{//int
-					// 	auto Offset=builder.CreateMul(expression,ConstantInt::get(context, APInt(32, 4)));
-					// 	expression=builder.CreateAdd(tempAlloca,Offset);
-					// }
+					auto alloca = scope.find(node.id);
+					auto arr_ptr = builder.CreateLoad(Type::getInt32Ty(context), alloca);
+					curr_op = LOAD;
+					node.expression->accept(*this);
+					auto gep = builder.CreateGEP(Type::getInt32Ty(context), arr_ptr, expression);
+					expression = builder.CreateLoad(Type::getInt32Ty(context), gep);
 				}
 			}
 			break;
@@ -396,6 +392,12 @@ void CminusBuilder::visit(syntax_var &node) {
 				}
 				else{
 					// array
+					auto alloca = scope.find(node.id);
+					auto arr_ptr = builder.CreateLoad(Type::getInt32Ty(context), alloca);
+					curr_op = LOAD;
+					node.expression->accept(*this);
+					auto gep = builder.CreateGEP(Type::getInt32Ty(context), arr_ptr, expression);
+					builder.CreateStore(expression, gep);
 				}
 			}
 			break;
