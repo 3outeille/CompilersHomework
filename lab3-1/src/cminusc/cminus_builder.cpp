@@ -77,6 +77,7 @@ void CminusBuilder::visit(syntax_var_declaration &node) {
 				constarr, 
 				node.id);
 	}
+	//scope.push(node.id,gvar);
 	std::cout << std::endl;
 	remove_depth();
 }
@@ -84,7 +85,7 @@ void CminusBuilder::visit(syntax_var_declaration &node) {
 void CminusBuilder::visit(syntax_fun_declaration &node) {
 	add_depth();
 	_DEBUG_PRINT_N_(depth);
-	scope.enter();
+	//scope.enter();
 	std::cout << "fun-declaration: " << node.id << std::endl;
 	std::vector<Type *> Vars;
 	for (auto param: node.params) {
@@ -100,6 +101,8 @@ void CminusBuilder::visit(syntax_fun_declaration &node) {
 			GlobalValue::LinkageTypes::ExternalLinkage, 
 			node.id, 
 			*module);
+	scope.push(node.id,function);
+	scope.enter();
 	curr_func = function;
 	return_block = BasicBlock::Create(context, "returnBB", 0, 0);
 	auto entrybb = BasicBlock::Create(context, "entry", function);
@@ -535,4 +538,20 @@ void CminusBuilder::visit(syntax_term &node) {
 	remove_depth();
 }
 
-void CminusBuilder::visit(syntax_call &node) {}
+void CminusBuilder::visit(syntax_call &node) {
+	add_depth();
+	_DEBUG_PRINT_N_(depth);
+	std::cout << "call: " << node.id << "()" << std::endl;
+	auto func=scope.find(node.id);
+	if(func==nullptr){
+		std::cout << "ERROR:" << std::endl;
+		exit(1);
+	}
+	std::vector<Value*> args;
+	for (auto arg: node.args) {
+    	arg->accept(*this);
+		args.push_back(expression);
+	}
+	expression=builder.CreateCall(func,args);
+	remove_depth();
+}
