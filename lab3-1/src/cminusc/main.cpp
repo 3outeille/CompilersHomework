@@ -11,6 +11,7 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Module.h"
+#include "llvm/IR/Verifier.h"
 #include "llvm/Pass.h"
 #include "llvm/CodeGen/CommandFlags.inc"
 #include "llvm/CodeGen/Passes.h"
@@ -110,6 +111,14 @@ int main(int argc, char **argv) {
   assert(Target);
 
   legacy::PassManager PM;
+  std::unique_ptr<legacy::FunctionPassManager> FPM;
+  FPM.reset(new legacy::FunctionPassManager(mod.get()));
+  FPM->add(createVerifierPass());
+  FPM->doInitialization();
+  for (llvm::Function& F: *mod) {
+    FPM->run(F);
+  }
+  FPM->doFinalization();
 
   llvm::TargetLibraryInfoImpl TLII(Triple(mod->getTargetTriple()));
   PM.add(new TargetLibraryInfoWrapperPass(TLII));
@@ -155,6 +164,7 @@ int main(int argc, char **argv) {
     TPC.setInitialized();
     LLVMTM.addAsmPrinter(PM, *obj_ostream, nullptr, TargetMachine::CGFT_ObjectFile, MMI->getContext());
     PM.add(createFreeMachineFunctionPass());
+    PM.add(createVerifierPass());
     PM.run(*mod);
     obj_file->keep();
 
