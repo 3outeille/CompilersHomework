@@ -41,7 +41,13 @@ void CminusBuilder::visit(syntax_program &node) {
 	remove_depth();
 }
 
-void CminusBuilder::visit(syntax_num &node) {}
+void CminusBuilder::visit(syntax_num &node) {
+	add_depth();
+	_DEBUG_PRINT_N_(depth);
+	std::cout << "num" << std::endl;
+	expression = ConstantInt::get(context, APInt(32, node.value));
+	remove_depth();
+}
 
 void CminusBuilder::visit(syntax_var_declaration &node) {
 	add_depth();
