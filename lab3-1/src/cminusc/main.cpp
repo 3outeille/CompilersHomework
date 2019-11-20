@@ -27,13 +27,14 @@ using namespace std::literals::string_literals;
 
 void print_help(std::string exe_name) {
     std::cout << "Usage: " << exe_name <<
-      " [ -h | --help ] [ -o <target-file> ] [ -emit-llvm ] <input-file>" << std::endl;
+      " [ -h | --help ] [ -o <target-file> ] [ -emit-llvm ] [-analyze] <input-file>" << std::endl;
 }
 
 int main(int argc, char **argv) {
   std::string target_path;
   std::string input_path;
   bool emit = false;
+  bool analyze = false;
   for (int i = 1;i < argc;++i) {
     if (argv[i] == "-h"s || argv[i] == "--help"s) {
       print_help(argv[0]);
@@ -48,6 +49,8 @@ int main(int argc, char **argv) {
       }
     } else if (argv[i] == "-emit-llvm"s) {
       emit = true;
+    } else if (argv[i] == "-analyze"s) {
+      analyze = true;
     } else {
       if (input_path.empty()) {
         input_path = argv[i];
@@ -111,9 +114,6 @@ int main(int argc, char **argv) {
   assert(Target);
 
   legacy::PassManager PM;
-  std::unique_ptr<legacy::FunctionPassManager> FPM;
-  FPM.reset(new legacy::FunctionPassManager(mod.get()));
-  FPM->add(createVerifierPass());
 
   llvm::TargetLibraryInfoImpl TLII(Triple(mod->getTargetTriple()));
   PM.add(new TargetLibraryInfoWrapperPass(TLII));
@@ -134,7 +134,21 @@ int main(int argc, char **argv) {
   // auto P = PI->getNormalCtor()();
   // PM.add(P);
 
-  if (emit) {
+  if (analyze) {
+    std::unique_ptr<legacy::FunctionPassManager> FPM;
+    FPM.reset(new legacy::FunctionPassManager(mod.get()));
+    FPM->add(createVerifierPass());
+    FPM->doInitialization();
+
+    for (llvm::Function& F: *mod) {
+      FPM->run(F);
+    }
+    FPM->doFinalization();
+    PM.add(createVerifierPass());
+    PM.run(*mod);
+    std::cout << "Your module looks fine :)." << std::endl;
+  }
+  else if (emit) {
     auto output_file = llvm::make_unique<llvm::ToolOutputFile>(target_path, error_msg, llvm::sys::fs::F_None);
     if(error_msg.value()) {
       llvm::errs() << error_msg.message() << "\n";
@@ -145,19 +159,8 @@ int main(int argc, char **argv) {
     mod->print(*output_ostream, nullptr);
     output_file->keep();
 
-    FPM->doInitialization();
-    for (llvm::Function& F: *mod) {
-      FPM->run(F);
-    }
-    FPM->doFinalization();
-
     return 0;
   } else {
-    FPM->doInitialization();
-    for (llvm::Function& F: *mod) {
-      FPM->run(F);
-    }
-    FPM->doFinalization();
 
     auto obj_file_name = target_path + ".o";
     auto obj_file = llvm::make_unique<llvm::ToolOutputFile>(obj_file_name, error_msg, llvm::sys::fs::F_None);
@@ -173,7 +176,6 @@ int main(int argc, char **argv) {
 
     LLVMTM.addAsmPrinter(PM, *obj_ostream, nullptr, TargetMachine::CGFT_ObjectFile, MMI->getContext());
     PM.add(createFreeMachineFunctionPass());
-    PM.add(createVerifierPass());
     PM.run(*mod);
     obj_file->keep();
 
