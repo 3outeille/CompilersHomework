@@ -1,6 +1,11 @@
 #include "cminus_builder.hpp"
 #include <iostream>
 
+enum var_op {
+  LOAD,
+  STORE
+};
+
 // You can define global variables here
 // to store state
 using namespace llvm;  
@@ -20,6 +25,9 @@ bool is_returned = false;
 bool is_returned_record = false;
 int label_cnt = 0;
 
+// show what to do in syntax_var
+var_op curr_op;
+
 #define _DEBUG_PRINT_N_(N) {\
   std::cout << std::string(N, '-');\
 }
@@ -33,7 +41,13 @@ void CminusBuilder::visit(syntax_program &node) {
 	remove_depth();
 }
 
-void CminusBuilder::visit(syntax_num &node) {}
+void CminusBuilder::visit(syntax_num &node) {
+	add_depth();
+	_DEBUG_PRINT_N_(depth);
+	std::cout << "num" << std::endl;
+	expression = ConstantInt::get(context, APInt(32, node.value));
+	remove_depth();
+}
 
 void CminusBuilder::visit(syntax_var_declaration &node) {
 	add_depth();
@@ -189,6 +203,7 @@ void CminusBuilder::visit(syntax_selection_stmt &node) {
 	add_depth();
 	_DEBUG_PRINT_N_(depth);
 	std::cout << "selection_stmt" << std::endl;
+	curr_op = LOAD;
 	node.expression->accept(*this);
 	// actually this is not needed, as llvm will automatically generate different label name
 	char labelname[100];
@@ -275,6 +290,7 @@ void CminusBuilder::visit(syntax_iteration_stmt &node) {
 	builder.CreateBr(startBB);
 	builder.SetInsertPoint(startBB);
 	curr_block = startBB;
+	curr_op = LOAD;
 	node.expression->accept(*this);
 	auto expri1 = builder.CreateICmpNE(expression, ConstantInt::get(Type::getInt32Ty(context), 0, true));
 	sprintf(labelname, "loopBodyBB_%d", label_now);
@@ -300,6 +316,7 @@ void CminusBuilder::visit(syntax_return_stmt &node) {
 	_DEBUG_PRINT_N_(depth);
 	std::cout << "return_stmt" << std::endl;
 	if (node.expression != nullptr) {
+		curr_op = LOAD;
 		node.expression->accept(*this);
 		Value* retVal;
 		if (expression->getType() == Type::getInt1Ty(context)) {
@@ -327,24 +344,56 @@ void CminusBuilder::visit(syntax_return_stmt &node) {
 }
 
 void CminusBuilder::visit(syntax_var &node) {
-	//node.id
-	// dummy for testing assign_expression
 	add_depth();
 	_DEBUG_PRINT_N_(depth);
-	std::cout << "var - " << node.id << std::endl;	
-	if(node.expression==nullptr){//variable
-		expression=scope.find(node.id);
-	}
-	else{//array
-		node.expression->accept(*this);
-		auto tempAlloca=scope.find(node.id);
-		Type* tp=tempAlloca->getType();
-		if(tp->isVoidTy()){//void
-			expression=tempAlloca;
+	std::cout << "var: " << node.id << " op: " << curr_op << std::endl;
+	switch (curr_op) {
+		case LOAD: {
+			if (scope.in_global()) {
+				// in global
+				std::cout << "global" << std::endl;
+			} else {
+				// not in global
+				if (node.expression == nullptr) {
+					// variable
+					auto alloca = scope.find(node.id);
+					expression = builder.CreateLoad(Type::getInt32Ty(context), alloca);
+				}
+				else{
+					// array
+					// node.expression->accept(*this);
+					// auto tempAlloca=scope.find(node.id);
+					// Type* tp=tempAlloca->getType();
+					// if(tp->isVoidTy()){//void
+					// 	expression=tempAlloca;
+					// }
+					// else{//int
+					// 	auto Offset=builder.CreateMul(expression,ConstantInt::get(context, APInt(32, 4)));
+					// 	expression=builder.CreateAdd(tempAlloca,Offset);
+					// }
+				}
+			}
+			break;
 		}
-		else{//int
-			auto Offset=builder.CreateMul(expression,ConstantInt::get(context, APInt(32, 4)));
-			expression=builder.CreateAdd(tempAlloca,Offset);
+		case STORE: {
+			if (scope.in_global()) {
+			// in global
+				std::cout << "global" << std::endl;
+			} else {
+				// not in global
+				if (node.expression == nullptr) {
+					// variable
+					auto alloca = scope.find(node.id);
+					builder.CreateStore(expression, alloca);
+				}
+				else{
+					// array
+				}
+			}
+			break;
+		}
+		default: {
+			std::cout << "ERROR: wrong var op!" << std::endl;
 		}
 	}
 	remove_depth();
@@ -361,10 +410,11 @@ void CminusBuilder::visit(syntax_assign_expression &node) {
 	_DEBUG_PRINT_N_(depth);
 	std::cout << "assign_expression" << std::endl;
 
+	curr_op = LOAD;
 	node.expression->accept(*this);
-	auto val=expression;
+
+	curr_op = STORE;
 	node.var->accept(*this);
-	builder.CreateStore(val,expression);
 	remove_depth();
 }
 
@@ -380,11 +430,14 @@ void CminusBuilder::visit(syntax_simple_expression &node) {
 	std::cout << "simple_expression" << std::endl;
 
 	if (node.additive_expression_r == nullptr) {
+		curr_op = LOAD;
 		node.additive_expression_l->accept(*this);
 	}
 	else {
+		curr_op = LOAD;
 		node.additive_expression_l->accept(*this);
 		Value* lhs = expression;
+		curr_op = LOAD;
 		node.additive_expression_r->accept(*this);
 		Value* rhs = expression;
 		switch (node.op) {
@@ -419,11 +472,14 @@ void CminusBuilder::visit(syntax_additive_expression &node) {
 	std::cout << "additive_expression" << std::endl;
 
 	if (node.additive_expression == nullptr) {
+		curr_op = LOAD;
 		node.term->accept(*this);
 	}
 	else {
+		curr_op = LOAD;
 		node.additive_expression->accept(*this);
 		Value* lhs = expression;
+		curr_op = LOAD;
 		node.term->accept(*this);
 		Value* rhs = expression;
 		switch (node.op) {
@@ -448,11 +504,14 @@ void CminusBuilder::visit(syntax_term &node) {
 	std::cout << "term" << std::endl;
 
 	if (node.term == nullptr) {
+		curr_op = LOAD;
 		node.factor->accept(*this);
 	}
 	else {
+		curr_op = LOAD;
 		node.term->accept(*this);
 		Value* lhs = expression;
+		curr_op = LOAD;
 		node.factor->accept(*this);
 		Value* rhs = expression;
 		switch (node.op) {
