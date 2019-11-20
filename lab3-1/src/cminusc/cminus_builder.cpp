@@ -7,7 +7,7 @@ using namespace llvm;
 // seems to need a global variable to record whether the last declaration is main
 // this is for array to get basicblock ref. correctly
 BasicBlock* curr_block;
-// the return label 
+// the return basicblock, to make code inside function know where to jump to return
 BasicBlock* return_block;
 // the return value Alloca
 Value* return_alloca;
@@ -87,11 +87,8 @@ void CminusBuilder::visit(syntax_fun_declaration &node) {
 			node.id, 
 			*module);
 	curr_func = function;
-	auto nullentrybb = BasicBlock::Create(context, "nullentry", function);
-	return_block = BasicBlock::Create(context, "returnBB", function);
+	return_block = BasicBlock::Create(context, "returnBB", 0, 0);
 	auto entrybb = BasicBlock::Create(context, "entry", function);
-	builder.SetInsertPoint(nullentrybb);
-	builder.CreateBr(entrybb);
 	builder.SetInsertPoint(entrybb);
 	curr_block = entrybb;
 	// allocate space for function params, and add to symbol table(scope)
@@ -119,19 +116,14 @@ void CminusBuilder::visit(syntax_fun_declaration &node) {
 	if(node.type != TYPE_VOID) {
 		return_alloca = builder.CreateAlloca(Type::getInt32Ty(context));
 	}
-	//builder.SetInsertPoint(return_block);
 	
 	// reset label counter for each new function
 	label_cnt = 0;
 
-	//builder.SetInsertPoint(entrybb);
 	node.compound_stmt->accept(*this);
 
-	auto truereturn = BasicBlock::Create(context, "trueReturnBB", function);
-	//builder.CreateBr(truereturn);
+	return_block->insertInto(function);
 	builder.SetInsertPoint(return_block);
-	builder.CreateBr(truereturn);
-	builder.SetInsertPoint(truereturn);
 	if(node.type != TYPE_VOID) {
 		auto retLoad = builder.CreateLoad(Type::getInt32Ty(context), return_alloca);
 		builder.CreateRet(retLoad);
@@ -359,10 +351,11 @@ void CminusBuilder::visit(syntax_var &node) {
 }
 
 void CminusBuilder::visit(syntax_assign_expression &node) {
-	// std::cout << "*generate dummy expression" << std::endl;
-	// dummy for my testing
+	 //std::cout << "*generate dummy expression" << std::endl;
+	 ////dummy for my testing
 	//expression = ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10));
-	// expression = builder.CreateICmpNE(ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)), ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)));
+	 //expression = builder.CreateICmpNE(ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)), ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)));
+	 //return;
 
 	add_depth();
 	_DEBUG_PRINT_N_(depth);
@@ -376,6 +369,12 @@ void CminusBuilder::visit(syntax_assign_expression &node) {
 }
 
 void CminusBuilder::visit(syntax_simple_expression &node) {
+	std::cout << "*generate dummy expression" << std::endl;
+	 //dummy for my testing
+	expression = ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10));
+	expression = builder.CreateICmpNE(ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)), ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)));
+	return;
+
 	add_depth();
 	_DEBUG_PRINT_N_(depth);
 	std::cout << "simple_expression" << std::endl;
@@ -412,10 +411,6 @@ void CminusBuilder::visit(syntax_simple_expression &node) {
 	remove_depth();
 	//auto lhsAlloca = builder.CreateAlloca(Type::getInt32Ty(context));
 	//auto rhsAlloca = builder.CreateAlloca(Type::getInt32Ty(context));
-	//std::cout << "*generate dummy expression" << std::endl;
-	// dummy for my testing
-	//expression = ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10));
-	//expression = builder.CreateICmpNE(ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)), ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)));
 }
 
 void CminusBuilder::visit(syntax_additive_expression &node) {
