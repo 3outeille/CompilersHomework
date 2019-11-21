@@ -563,7 +563,8 @@ void syntax_tree_printer::visit(syntax_expresion_stmt &node) {
   _DEBUG_PRINT_N_(depth);
   std::cout << "expression-stmt" << std::endl;
   add_depth();
-  node.expression->accept(*this);
+  if (node.expression != nullptr)
+    node.expression->accept(*this);
   remove_depth();
 }
 

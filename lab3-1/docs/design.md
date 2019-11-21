@@ -25,9 +25,13 @@ make -j
 ```sh
 # 假设cminusc的路径在你的$PATH中
 
+# 验证你生成的Module，如果有问题会报错
+cminusc test.cminus -analyze
+
 # 利用构建好的Module生成test.ll
 # 注意，如果调用了外部函数input, output等，则无法使用lli运行
 cminusc test.cminus -emit-llvm
+
 # 假设libcminus_io.a的路径在$LIBRARY_PATH中，clang的路径在$PATH中
 # 1. 利用构建好的Module生成对象文件test.o
 # 2. 调用clang来链接对象文件和静态库libcminus_io.a生成二进制文件test
