@@ -51,18 +51,19 @@ void CminusBuilder::visit(syntax_num &node) {
 
 void CminusBuilder::visit(syntax_var_declaration &node) {
 	add_depth();
+	GlobalVariable* gvar;
 	// declaration is variable
 	if (node.num == nullptr) {
 		_DEBUG_PRINT_N_(depth);
 		std::cout << "var-declaration: " << node.id;
 		ConstantInt* const_int = ConstantInt::get(context, APInt(32, 0));
-		GlobalVariable* gvar = new GlobalVariable(*module, 
+		gvar = new GlobalVariable(*module, 
 				PointerType::getInt32Ty(context), 
 				false, 
 				GlobalValue::CommonLinkage, 
 				const_int, 
 				node.id);
-		gvar->setAlignment(4);
+		//gvar->setAlignment(4);
 	}
 	// declaration is array
 	else {
@@ -70,14 +71,14 @@ void CminusBuilder::visit(syntax_var_declaration &node) {
 		std::cout << "var-declaration: " << node.id << "[" << node.num->value << "]";
 		ArrayType* arrType = ArrayType::get(IntegerType::get(context, 32), node.num->value);
 		ConstantAggregateZero* constarr = ConstantAggregateZero::get(arrType);
-		GlobalVariable* gvar = new GlobalVariable(*module, 
+		gvar = new GlobalVariable(*module, 
 				arrType, 
 				false, 
 				GlobalValue::CommonLinkage, 
 				constarr, 
 				node.id);
 	}
-	//scope.push(node.id,gvar);
+	scope.push(node.id,gvar);
 	std::cout << std::endl;
 	remove_depth();
 }
@@ -268,6 +269,7 @@ void CminusBuilder::visit(syntax_selection_stmt &node) {
 	}
 	builder.SetInsertPoint(endBB);
 	curr_block = endBB;
+	is_returned = false;
 	remove_depth();
 }
 
@@ -311,6 +313,7 @@ void CminusBuilder::visit(syntax_iteration_stmt &node) {
 	builder.CreateCondBr(expri1, bodyBB, endBB);
 	builder.SetInsertPoint(endBB);
 	curr_block = endBB;
+	is_returned = false;
 	remove_depth();
 }
 
@@ -343,6 +346,7 @@ void CminusBuilder::visit(syntax_return_stmt &node) {
 	}
 	builder.CreateBr(return_block);
 	is_returned = true;
+	is_returned_record = true;
 	remove_depth();
 }
 
@@ -544,7 +548,7 @@ void CminusBuilder::visit(syntax_call &node) {
 	std::cout << "call: " << node.id << "()" << std::endl;
 	auto func=scope.find(node.id);
 	if(func==nullptr){
-		std::cout << "ERROR:" << std::endl;
+		std::cout << "ERROR: Unknown function: " << node.id << std::endl;
 		exit(1);
 	}
 	std::vector<Value*> args;
