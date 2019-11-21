@@ -20,6 +20,8 @@ Value* return_alloca;
 Function* curr_func;
 // record the expression, to be used in while, if and return statements
 Value* expression;
+// to record whether a load is required after a store(like in a=b=c)
+bool load_required = true;
 // record whether a return statement is encountered. If return is found, following code should be ignored to avoid IR problem.
 bool is_returned = false;
 bool is_returned_record = false;
@@ -365,7 +367,20 @@ void CminusBuilder::visit(syntax_var &node) {
 			if (node.expression == nullptr) {
 				// variable
 				auto alloca = scope.find(node.id);
-				expression = builder.CreateLoad(Type::getInt32Ty(context), alloca);
+				if (alloca->getType() != PointerType::getInt32PtrTy(context)) {
+					// it's an array paramter used in call, do a GEP to change arr type to pointer type
+					AllocaInst* alloca2 = dyn_cast<AllocaInst>(alloca);
+					std::vector<Value *> idx;
+					idx.push_back(ConstantInt::get(context, APInt(32, 0)));
+					idx.push_back(ConstantInt::get(context, APInt(32, 0)));
+					std::cout << "gep arr begin." << std::endl;
+					expression = builder.CreateGEP(alloca2->getAllocatedType(), alloca2, idx);
+					std::cout << "gep arr done." << std::endl;
+				}
+				else {
+					std::cout << "normal variable load." << std::endl;
+					expression = builder.CreateLoad(Type::getInt32Ty(context), alloca);
+				}
 			}
 			else{
 				// array
@@ -395,9 +410,10 @@ void CminusBuilder::visit(syntax_var &node) {
 					expr = expression;
 				}
 				builder.CreateStore(expr, alloca);
+				if (load_required)
+					expression = builder.CreateLoad(Type::getInt32Ty(context), alloca);
 			}
 			else{
-				// array
 				AllocaInst* alloca = dyn_cast<AllocaInst>(scope.find(node.id));
 				curr_op = LOAD;
 				auto rhs = expression;
@@ -409,13 +425,30 @@ void CminusBuilder::visit(syntax_var &node) {
 				else {
 					expr = expression;
 				}
-				std::vector<Value *> idx;
-				idx.push_back(ConstantInt::get(context, APInt(32, 0)));
-				idx.push_back(expr);
-				auto gep = builder.CreateGEP(alloca->getAllocatedType(), alloca, idx);
-				//GetElementPtrInst* gep = GetElementPtrInst::Create(alloca->getAllocatedType(), alloca, expression, "", curr_block);
-				//gep->mutateType(PointerType::getInt32PtrTy(context));
-				expression = builder.CreateStore(rhs, gep);
+				if (alloca->getAllocatedType() == PointerType::getInt32PtrTy(context)) {
+					// array passed by reference, treat as pointer
+					// function parameter makes it pointer of pointer, so load first 
+					auto arrptr = builder.CreateLoad(PointerType::getInt32PtrTy(context), alloca);
+					std::vector<Value *> idx;
+					idx.push_back(expr);
+					auto gep = builder.CreateGEP(Type::getInt32Ty(context), arrptr, idx);
+					builder.CreateStore(rhs, gep);
+					if (load_required)
+						expression = builder.CreateLoad(Type::getInt32Ty(context), gep);
+
+				}
+				else {
+					// local array
+					std::vector<Value *> idx;
+					idx.push_back(ConstantInt::get(context, APInt(32, 0)));
+					idx.push_back(expr);
+					auto gep = builder.CreateGEP(alloca->getAllocatedType(), alloca, idx);
+					//GetElementPtrInst* gep = GetElementPtrInst::Create(alloca->getAllocatedType(), alloca, expression, "", curr_block);
+					//gep->mutateType(PointerType::getInt32PtrTy(context));
+					builder.CreateStore(rhs, gep);
+					if (load_required)
+						expression = builder.CreateLoad(Type::getInt32Ty(context), alloca);
+				}
 			}
 			break;
 		}
@@ -427,12 +460,6 @@ void CminusBuilder::visit(syntax_var &node) {
 }
 
 void CminusBuilder::visit(syntax_assign_expression &node) {
-	 //std::cout << "*generate dummy expression" << std::endl;
-	 ////dummy for my testing
-	//expression = ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10));
-	 //expression = builder.CreateICmpNE(ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)), ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)));
-	 //return;
-
 	add_depth();
 	_DEBUG_PRINT_N_(depth);
 	std::cout << "assign_expression" << std::endl;
@@ -446,12 +473,6 @@ void CminusBuilder::visit(syntax_assign_expression &node) {
 }
 
 void CminusBuilder::visit(syntax_simple_expression &node) {
-	//std::cout << "*generate dummy expression" << std::endl;
-	////dummy for my testing
-	//expression = ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10));
-	//expression = builder.CreateICmpNE(ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)), ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)));
-	//return;
-
 	add_depth();
 	_DEBUG_PRINT_N_(depth);
 	std::cout << "simple_expression" << std::endl;
@@ -489,8 +510,6 @@ void CminusBuilder::visit(syntax_simple_expression &node) {
 		}
 	}
 	remove_depth();
-	//auto lhsAlloca = builder.CreateAlloca(Type::getInt32Ty(context));
-	//auto rhsAlloca = builder.CreateAlloca(Type::getInt32Ty(context));
 }
 
 void CminusBuilder::visit(syntax_additive_expression &node) {
@@ -519,10 +538,6 @@ void CminusBuilder::visit(syntax_additive_expression &node) {
 		}
 	}
 	remove_depth();
-	//std::cout << "*generate dummy expression" << std::endl;
-	// dummy for my testing
-	//expression = ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10));
-	//expression = builder.CreateICmpNE(ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)), ConstantInt::get(Type::getInt32Ty(context), APInt(32, 10)));
 }
 
 void CminusBuilder::visit(syntax_term &node) {
@@ -564,7 +579,7 @@ void CminusBuilder::visit(syntax_call &node) {
 	}
 	std::vector<Value*> args;
 	for (auto arg: node.args) {
-    	arg->accept(*this);
+		arg->accept(*this);
 		args.push_back(expression);
 	}
 	expression=builder.CreateCall(func,args);
