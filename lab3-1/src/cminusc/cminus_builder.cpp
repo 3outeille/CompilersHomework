@@ -78,7 +78,7 @@ void CminusBuilder::visit(syntax_var_declaration &node) {
 				constarr, 
 				node.id);
 	}
-	scope.push(node.id,gvar);
+	scope.push(node.id, gvar);
 	std::cout << std::endl;
 	remove_depth();
 }
@@ -356,55 +356,43 @@ void CminusBuilder::visit(syntax_var &node) {
 	std::cout << "var: " << node.id << " op: " << (curr_op == LOAD ? "LOAD" : "STORE") << std::endl;
 	switch (curr_op) {
 		case LOAD: {
-			if (scope.in_global()) {
-				// in global
-				std::cout << "global" << std::endl;
-			} else {
-				// not in global
-				if (node.expression == nullptr) {
-					// variable
-					auto alloca = scope.find(node.id);
-					expression = builder.CreateLoad(Type::getInt32Ty(context), alloca);
-				}
-				else{
-					// array
-					auto alloca = scope.find(node.id);
-					auto arr_ptr = builder.CreateLoad(Type::getInt32Ty(context), alloca);
-					curr_op = LOAD;
-					node.expression->accept(*this);
-					auto gep = builder.CreateGEP(Type::getInt32Ty(context), arr_ptr, expression);
-					expression = builder.CreateLoad(Type::getInt32Ty(context), gep);
-				}
+			if (node.expression == nullptr) {
+				// variable
+				auto alloca = scope.find(node.id);
+				expression = builder.CreateLoad(Type::getInt32Ty(context), alloca);
+			}
+			else{
+				// array
+				auto alloca = scope.find(node.id);
+				auto arr_ptr = builder.CreateLoad(Type::getInt32Ty(context), alloca);
+				curr_op = LOAD;
+				node.expression->accept(*this);
+				auto gep = builder.CreateGEP(Type::getInt32Ty(context), arr_ptr, expression);
+				expression = builder.CreateLoad(Type::getInt32Ty(context), gep);
 			}
 			break;
 		}
 		case STORE: {
-			if (scope.in_global()) {
-			// in global
-				std::cout << "global" << std::endl;
-			} else {
-				// not in global
-				if (node.expression == nullptr) {
-					// variable
-					auto alloca = scope.find(node.id);
-					Value* expr;
-					if(expression->getType() == Type::getInt1Ty(context)) {
-						expr = builder.CreateIntCast(expression, Type::getInt32Ty(context), false);
-					}
-					else {
-						expr = expression;
-					}
-					builder.CreateStore(expr, alloca);
+			if (node.expression == nullptr) {
+				// variable
+				auto alloca = scope.find(node.id);
+				Value* expr;
+				if(expression->getType() == Type::getInt1Ty(context)) {
+					expr = builder.CreateIntCast(expression, Type::getInt32Ty(context), false);
 				}
-				else{
-					// array
-					auto alloca = scope.find(node.id);
-					auto arr_ptr = builder.CreateLoad(Type::getInt32Ty(context), alloca);
-					curr_op = LOAD;
-					node.expression->accept(*this);
-					auto gep = builder.CreateGEP(Type::getInt32Ty(context), arr_ptr, expression);
-					builder.CreateStore(expression, gep);
+				else {
+					expr = expression;
 				}
+				builder.CreateStore(expr, alloca);
+			}
+			else{
+				// array
+				auto alloca = scope.find(node.id);
+				auto arr_ptr = builder.CreateLoad(Type::getInt32Ty(context), alloca);
+				curr_op = LOAD;
+				node.expression->accept(*this);
+				auto gep = builder.CreateGEP(Type::getInt32Ty(context), arr_ptr, expression);
+				builder.CreateStore(expression, gep);
 			}
 			break;
 		}
