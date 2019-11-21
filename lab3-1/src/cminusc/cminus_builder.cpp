@@ -119,7 +119,6 @@ void CminusBuilder::visit(syntax_fun_declaration &node) {
 			//auto arrType = ArrayType::get()
 			//auto param_arr = builder.Create
 			auto param_var = builder.CreateAlloca(PointerType::getInt32PtrTy(context));
-			//builder.CreatePtrToInt
 			scope.push(param->id, param_var);
 			builder.CreateStore(arg, param_var);
 		}
@@ -174,7 +173,7 @@ void CminusBuilder::visit(syntax_compound_stmt &node) {
 		// array declaration
 		if (var_decl->num != nullptr) {
 			auto arrType = ArrayType::get(IntegerType::get(context, 32), var_decl->num->value);
-			auto arrptr = new AllocaInst(arrType, 0, "", curr_block);
+			auto arrptr = builder.CreateAlloca(arrType);
 			scope.push(var_decl->id, arrptr);
 		}
 		// normal variable declaration
@@ -213,16 +212,16 @@ void CminusBuilder::visit(syntax_selection_stmt &node) {
 	char labelname[100];
 	BasicBlock* trueBB;
 	BasicBlock* falseBB;
-	auto expri1 = builder.CreateICmpNE(expression, ConstantInt::get(expression->getType(), 0, true));
+	Value* expr1;
+	if (expression->getType() == Type::getInt32Ty(context)) {
+		expr1 = builder.CreateICmpNE(expression, ConstantInt::get(expression->getType(), 0, true));
+	}
+	else {
+		expr1 = expression;
+	}
 	// record the current block, for add the br later
 	BasicBlock* orig_block = curr_block;
 	// create the conditional jump CondBr
-	//auto exprAlloca = builder.CreateAlloca(Type::getInt1Ty(context));
-	//auto exprStore = builder.CreateStore(expri1, exprAlloca);
-	//auto exprLoad = builder.CreateLoad(Type::getInt1Ty(context), exprAlloca);
-	//builder.CreateCondBr(exprLoad, trueBB, falseBB);
-	//builder.CreateCondBr(exprLoad, trueBB, falseBB);
-	//
 	// if-statement
 	label_cnt++;
 	int label_now = label_cnt;
@@ -253,10 +252,10 @@ void CminusBuilder::visit(syntax_selection_stmt &node) {
 	auto endBB = BasicBlock::Create(context, labelname, curr_func);
 	builder.SetInsertPoint(orig_block);
 	if (node.else_statement != nullptr) {
-		builder.CreateCondBr(expri1, trueBB, falseBB);
+		builder.CreateCondBr(expr1, trueBB, falseBB);
 	}
 	else {
-		builder.CreateCondBr(expri1, trueBB, endBB);
+		builder.CreateCondBr(expr1, trueBB, endBB);
 	}
 	// unconditional jump to make ends meet
 	if (!trueBB_returned) {
@@ -297,7 +296,14 @@ void CminusBuilder::visit(syntax_iteration_stmt &node) {
 	curr_block = startBB;
 	curr_op = LOAD;
 	node.expression->accept(*this);
-	auto expri1 = builder.CreateICmpNE(expression, ConstantInt::get(expression->getType(), 0, true));
+	Value* expr1;
+	if (expression->getType() == Type::getInt32Ty(context)) {
+		expr1 = builder.CreateICmpNE(expression, ConstantInt::get(expression->getType(), 0, true));
+	}
+	else {
+		expr1 = expression;
+		std::cout << "..." << std::endl;
+	}
 	sprintf(labelname, "loopBodyBB_%d", label_now);
 	auto bodyBB = BasicBlock::Create(context, labelname, curr_func);
 	builder.SetInsertPoint(bodyBB);
@@ -310,7 +316,7 @@ void CminusBuilder::visit(syntax_iteration_stmt &node) {
 	auto endBB = BasicBlock::Create(context, labelname, curr_func);
 	// go back to create the CondBr in it's right location
 	builder.SetInsertPoint(startBB);
-	builder.CreateCondBr(expri1, bodyBB, endBB);
+	builder.CreateCondBr(expr1, bodyBB, endBB);
 	builder.SetInsertPoint(endBB);
 	curr_block = endBB;
 	is_returned = false;
@@ -363,11 +369,16 @@ void CminusBuilder::visit(syntax_var &node) {
 			}
 			else{
 				// array
-				auto alloca = scope.find(node.id);
-				auto arr_ptr = builder.CreateLoad(Type::getInt32Ty(context), alloca);
+				AllocaInst* alloca = dyn_cast<AllocaInst>(scope.find(node.id));
 				curr_op = LOAD;
 				node.expression->accept(*this);
-				auto gep = builder.CreateGEP(Type::getInt32Ty(context), arr_ptr, expression);
+				std::vector<Value *> idx;
+				idx.push_back(ConstantInt::get(context, APInt(32, 0)));
+				idx.push_back(expression);
+				auto gep = builder.CreateGEP(alloca->getAllocatedType(), alloca, idx);
+				//gep->mutateType(PointerType::getInt32PtrTy(context));
+				//GetElementPtrInst* gep = GetElementPtrInst::Create(alloca->getAllocatedType(), alloca, expression, "", curr_block);
+				//gep->mutateType(PointerType::getInt32PtrTy(context));
 				expression = builder.CreateLoad(Type::getInt32Ty(context), gep);
 			}
 			break;
@@ -387,12 +398,24 @@ void CminusBuilder::visit(syntax_var &node) {
 			}
 			else{
 				// array
-				auto alloca = scope.find(node.id);
-				auto arr_ptr = builder.CreateLoad(Type::getInt32Ty(context), alloca);
+				AllocaInst* alloca = dyn_cast<AllocaInst>(scope.find(node.id));
 				curr_op = LOAD;
+				auto rhs = expression;
 				node.expression->accept(*this);
-				auto gep = builder.CreateGEP(Type::getInt32Ty(context), arr_ptr, expression);
-				builder.CreateStore(expression, gep);
+				Value* expr;
+				if(expression->getType() == Type::getInt1Ty(context)) {
+					expr = builder.CreateIntCast(expression, Type::getInt32Ty(context), false);
+				}
+				else {
+					expr = expression;
+				}
+				std::vector<Value *> idx;
+				idx.push_back(ConstantInt::get(context, APInt(32, 0)));
+				idx.push_back(expr);
+				auto gep = builder.CreateGEP(alloca->getAllocatedType(), alloca, idx);
+				//GetElementPtrInst* gep = GetElementPtrInst::Create(alloca->getAllocatedType(), alloca, expression, "", curr_block);
+				//gep->mutateType(PointerType::getInt32PtrTy(context));
+				expression = builder.CreateStore(rhs, gep);
 			}
 			break;
 		}
