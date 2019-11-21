@@ -1,0 +1,42 @@
+int partition(int arr[], int low, int high){
+    int key;
+    key = arr[low];
+    while(low<high){
+        while((low <high) * (arr[high]>= key) )
+            high=high-1;
+        if(low<high)
+            arr[low=low+1] = arr[high];
+        while( (low<high) * (arr[low]<=key) )
+            low=low+1;
+        if(low<high)
+            arr[high=high-1] = arr[low];
+    }
+    arr[low] = key;
+    return low;
+}
+void quicksort(int arr[], int start, int end){
+    int pos;
+    if (start<end){
+        pos = partition(arr, start, end);
+        quicksort(arr,start,pos-1);
+        quicksort(arr,pos+1,end);
+    }
+    return;
+}
+int main(void){
+    int i;
+    int arr[10];
+    int N;
+    N = 10;
+    i = 0;
+    while(i < N) {
+	    input(arr[i]);
+	    i = i + 1;
+    }
+    quicksort(arr,0,N-1);
+    while(i < N) {
+	    output(arr[i]);
+	    i = i + 1;
+    }
+    return 0;
+}
