@@ -367,19 +367,16 @@ void CminusBuilder::visit(syntax_var &node) {
 			if (node.expression == nullptr) {
 				// variable
 				auto alloca = scope.find(node.id);
-				if (alloca->getType() != PointerType::getInt32PtrTy(context)) {
+				if (alloca->getType() == PointerType::getInt32PtrTy(context)) {
+					expression = builder.CreateLoad(Type::getInt32Ty(context), alloca);
+				}
+				else {
 					// it's an array paramter used in call, do a GEP to change arr type to pointer type
 					AllocaInst* alloca2 = dyn_cast<AllocaInst>(alloca);
 					std::vector<Value *> idx;
 					idx.push_back(ConstantInt::get(context, APInt(32, 0)));
 					idx.push_back(ConstantInt::get(context, APInt(32, 0)));
-					std::cout << "gep arr begin." << std::endl;
 					expression = builder.CreateGEP(alloca2->getAllocatedType(), alloca2, idx);
-					std::cout << "gep arr done." << std::endl;
-				}
-				else {
-					std::cout << "normal variable load." << std::endl;
-					expression = builder.CreateLoad(Type::getInt32Ty(context), alloca);
 				}
 			}
 			else{
@@ -387,14 +384,27 @@ void CminusBuilder::visit(syntax_var &node) {
 				AllocaInst* alloca = dyn_cast<AllocaInst>(scope.find(node.id));
 				curr_op = LOAD;
 				node.expression->accept(*this);
-				std::vector<Value *> idx;
-				idx.push_back(ConstantInt::get(context, APInt(32, 0)));
-				idx.push_back(expression);
-				auto gep = builder.CreateGEP(alloca->getAllocatedType(), alloca, idx);
-				//gep->mutateType(PointerType::getInt32PtrTy(context));
-				//GetElementPtrInst* gep = GetElementPtrInst::Create(alloca->getAllocatedType(), alloca, expression, "", curr_block);
-				//gep->mutateType(PointerType::getInt32PtrTy(context));
-				expression = builder.CreateLoad(Type::getInt32Ty(context), gep);
+				Value* expr;
+				if(expression->getType() == Type::getInt1Ty(context)) {
+					expr = builder.CreateIntCast(expression, Type::getInt32Ty(context), false);
+				}
+				else {
+					expr = expression;
+				}
+				if (alloca->getAllocatedType() == PointerType::getInt32PtrTy(context)) {
+					auto arrptr = builder.CreateLoad(PointerType::getInt32PtrTy(context), alloca);
+					std::vector<Value *> idx;
+					idx.push_back(expr);
+					auto gep = builder.CreateGEP(Type::getInt32Ty(context), arrptr, idx);
+					builder.CreateLoad(Type::getInt32Ty(context), gep);
+				}
+				else {
+					std::vector<Value *> idx;
+					idx.push_back(ConstantInt::get(context, APInt(32, 0)));
+					idx.push_back(expression);
+					auto gep = builder.CreateGEP(alloca->getAllocatedType(), alloca, idx);
+					expression = builder.CreateLoad(Type::getInt32Ty(context), gep);
+				}
 			}
 			break;
 		}
