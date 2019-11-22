@@ -20,8 +20,6 @@ Value* return_alloca;
 Function* curr_func;
 // record the expression, to be used in while, if and return statements
 Value* expression;
-// to record whether a load is required after a store(like in a=b=c)
-bool load_required = true;
 // record whether a return statement is encountered. If return is found, following code should be ignored to avoid IR problem.
 bool is_returned = false;
 bool is_returned_record = false;
@@ -365,23 +363,28 @@ void CminusBuilder::visit(syntax_var &node) {
 	switch (curr_op) {
 		case LOAD: {
 			if (node.expression == nullptr) {
-				// variable
 				auto alloca = scope.find(node.id);
 				if (alloca->getType() == PointerType::getInt32PtrTy(context)) {
+					// normal variable,
 					expression = builder.CreateLoad(Type::getInt32Ty(context), alloca);
+				}
+				else if (alloca->getType() == PointerType::getInt32PtrTy(context)->getPointerTo()) {
+					// array reference(pointer to int) variable, treat differently
+					// this is resulted from using array as function paramter, 
+					// while the array itself is passed to the caller function by reference
+					expression = builder.CreateLoad(PointerType::getInt32PtrTy(context), alloca);
 				}
 				else {
 					// it's an array paramter used in call, do a GEP to change arr type to pointer type
-					AllocaInst* alloca2 = dyn_cast<AllocaInst>(alloca);
 					std::vector<Value *> idx;
 					idx.push_back(ConstantInt::get(context, APInt(32, 0)));
 					idx.push_back(ConstantInt::get(context, APInt(32, 0)));
-					expression = builder.CreateGEP(alloca2->getAllocatedType(), alloca2, idx);
+					expression = builder.CreateGEP(alloca->getType()->getPointerElementType(), alloca, idx);
 				}
 			}
 			else{
 				// array
-				AllocaInst* alloca = dyn_cast<AllocaInst>(scope.find(node.id));
+				auto alloca = scope.find(node.id);
 				curr_op = LOAD;
 				node.expression->accept(*this);
 				Value* expr;
@@ -391,18 +394,20 @@ void CminusBuilder::visit(syntax_var &node) {
 				else {
 					expr = expression;
 				}
-				if (alloca->getAllocatedType() == PointerType::getInt32PtrTy(context)) {
+				if (alloca->getType()->getPointerElementType() == PointerType::getInt32PtrTy(context)) {
+					// array reference as pointer
 					auto arrptr = builder.CreateLoad(PointerType::getInt32PtrTy(context), alloca);
 					std::vector<Value *> idx;
 					idx.push_back(expr);
 					auto gep = builder.CreateGEP(Type::getInt32Ty(context), arrptr, idx);
-					builder.CreateLoad(Type::getInt32Ty(context), gep);
+					expression = builder.CreateLoad(Type::getInt32Ty(context), gep);
 				}
 				else {
+					// local or global array
 					std::vector<Value *> idx;
 					idx.push_back(ConstantInt::get(context, APInt(32, 0)));
 					idx.push_back(expression);
-					auto gep = builder.CreateGEP(alloca->getAllocatedType(), alloca, idx);
+					auto gep = builder.CreateGEP(alloca->getType()->getPointerElementType(), alloca, idx);
 					expression = builder.CreateLoad(Type::getInt32Ty(context), gep);
 				}
 			}
@@ -420,11 +425,9 @@ void CminusBuilder::visit(syntax_var &node) {
 					expr = expression;
 				}
 				builder.CreateStore(expr, alloca);
-				if (load_required)
-					expression = builder.CreateLoad(Type::getInt32Ty(context), alloca);
+				expression = expr;
 			}
 			else{
-				AllocaInst* alloca = dyn_cast<AllocaInst>(scope.find(node.id));
 				curr_op = LOAD;
 				auto rhs = expression;
 				node.expression->accept(*this);
@@ -435,7 +438,8 @@ void CminusBuilder::visit(syntax_var &node) {
 				else {
 					expr = expression;
 				}
-				if (alloca->getAllocatedType() == PointerType::getInt32PtrTy(context)) {
+				auto alloca = scope.find(node.id);
+				if (alloca->getType() == PointerType::getInt32PtrTy(context)->getPointerTo()) {
 					// array passed by reference, treat as pointer
 					// function parameter makes it pointer of pointer, so load first 
 					auto arrptr = builder.CreateLoad(PointerType::getInt32PtrTy(context), alloca);
@@ -443,21 +447,17 @@ void CminusBuilder::visit(syntax_var &node) {
 					idx.push_back(expr);
 					auto gep = builder.CreateGEP(Type::getInt32Ty(context), arrptr, idx);
 					builder.CreateStore(rhs, gep);
-					if (load_required)
-						expression = builder.CreateLoad(Type::getInt32Ty(context), gep);
+					expression = expr;
 
 				}
 				else {
-					// local array
+					// local array or global array, type of which is [100 x i32]* like
 					std::vector<Value *> idx;
 					idx.push_back(ConstantInt::get(context, APInt(32, 0)));
 					idx.push_back(expr);
-					auto gep = builder.CreateGEP(alloca->getAllocatedType(), alloca, idx);
-					//GetElementPtrInst* gep = GetElementPtrInst::Create(alloca->getAllocatedType(), alloca, expression, "", curr_block);
-					//gep->mutateType(PointerType::getInt32PtrTy(context));
+					auto gep = builder.CreateGEP(alloca->getType()->getPointerElementType(), alloca, idx);
 					builder.CreateStore(rhs, gep);
-					if (load_required)
-						expression = builder.CreateLoad(Type::getInt32Ty(context), alloca);
+					expression = expr;
 				}
 			}
 			break;
@@ -487,13 +487,9 @@ void CminusBuilder::visit(syntax_simple_expression &node) {
 	_DEBUG_PRINT_N_(depth);
 	std::cout << "simple_expression" << std::endl;
 
-	if (node.additive_expression_r == nullptr) {
-		curr_op = LOAD;
-		node.additive_expression_l->accept(*this);
-	}
-	else {
-		curr_op = LOAD;
-		node.additive_expression_l->accept(*this);
+	curr_op = LOAD;
+	node.additive_expression_l->accept(*this);
+	if(node.additive_expression_r != nullptr) {
 		Value* lhs = expression;
 		curr_op = LOAD;
 		node.additive_expression_r->accept(*this);

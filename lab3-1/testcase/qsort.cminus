@@ -1,18 +1,24 @@
-int partition(int arr[], int low, int high){
-    int key;
-    key = arr[low];
-    while(low<high){
-        while((low <high) * (arr[high]>= key) )
-            high=high-1;
-        if(low<high)
-            arr[low=low+1] = arr[high];
-        while( (low<high) * (arr[low]<=key) )
-            low=low+1;
-        if(low<high)
-            arr[high=high-1] = arr[low];
+int partition(int arr[], int l, int h){
+    int x;
+    int i;
+    int j;
+    int t;
+    x = arr[h];
+    i = l - 1;
+    j = l;
+    while(j <= h - 1) {
+	if(arr[j] <= x) {
+	    i = i + 1;
+	    t = arr[i];
+	    arr[i] = arr[j];
+	    arr[j] = t;
+	}
+	j = j + 1;
     }
-    arr[low] = key;
-    return low;
+    t = arr[i + 1];
+    arr[i + 1] = arr[h];
+    arr[h] = t;
+    return i + 1;
 }
 void quicksort(int arr[], int start, int end){
     int pos;
@@ -25,15 +31,16 @@ void quicksort(int arr[], int start, int end){
 }
 int main(void){
     int i;
-    int arr[10];
+    int arr[10000];
     int N;
-    N = 10;
+    N = input();
     i = 0;
     while(i < N) {
-	    input(arr[i]);
+	    arr[i] = input();
 	    i = i + 1;
     }
     quicksort(arr,0,N-1);
+    i = 0;
     while(i < N) {
 	    output(arr[i]);
 	    i = i + 1;
