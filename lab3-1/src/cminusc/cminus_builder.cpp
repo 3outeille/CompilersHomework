@@ -27,34 +27,34 @@ int label_cnt = 0;
 // show what to do in syntax_var
 var_op curr_op;
 
-#define _DEBUG_PRINT_N_(N) {\
-  std::cout << std::string(N, '-');\
-}
+//#define _DEBUG_PRINT_N_(N) {\
+  //std::cout << std::string(N, '-');\
+//}
 void CminusBuilder::visit(syntax_program &node) {
-	add_depth();
-	_DEBUG_PRINT_N_(depth);
-	std::cout << "program" << std::endl;
+	//add_depth();
+	//_DEBUG_PRINT_N_(depth);
+	//std::cout << "program" << std::endl;
 	for (auto decl: node.declarations) {
 		decl->accept(*this);
 	}
-	remove_depth();
+	//remove_depth();
 }
 
 void CminusBuilder::visit(syntax_num &node) {
-	add_depth();
-	_DEBUG_PRINT_N_(depth);
-	std::cout << "num" << std::endl;
+	//add_depth();
+	//_DEBUG_PRINT_N_(depth);
+	//std::cout << "num" << std::endl;
 	expression = ConstantInt::get(context, APInt(32, node.value));
-	remove_depth();
+	//remove_depth();
 }
 
 void CminusBuilder::visit(syntax_var_declaration &node) {
-	add_depth();
+	//add_depth();
 	GlobalVariable* gvar;
 	// declaration is variable
 	if (node.num == nullptr) {
-		_DEBUG_PRINT_N_(depth);
-		std::cout << "var-declaration: " << node.id;
+		//_DEBUG_PRINT_N_(depth);
+		//std::cout << "var-declaration: " << node.id;
 		ConstantInt* const_int = ConstantInt::get(context, APInt(32, 0));
 		gvar = new GlobalVariable(*module, 
 				PointerType::getInt32Ty(context), 
@@ -66,8 +66,8 @@ void CminusBuilder::visit(syntax_var_declaration &node) {
 	}
 	// declaration is array
 	else {
-		_DEBUG_PRINT_N_(depth);
-		std::cout << "var-declaration: " << node.id << "[" << node.num->value << "]";
+		//_DEBUG_PRINT_N_(depth);
+		//std::cout << "var-declaration: " << node.id << "[" << node.num->value << "]";
 		ArrayType* arrType = ArrayType::get(IntegerType::get(context, 32), node.num->value);
 		ConstantAggregateZero* constarr = ConstantAggregateZero::get(arrType);
 		gvar = new GlobalVariable(*module, 
@@ -79,14 +79,14 @@ void CminusBuilder::visit(syntax_var_declaration &node) {
 	}
 	scope.push(node.id, gvar);
 	std::cout << std::endl;
-	remove_depth();
+	//remove_depth();
 }
 
 void CminusBuilder::visit(syntax_fun_declaration &node) {
-	add_depth();
-	_DEBUG_PRINT_N_(depth);
+	//add_depth();
+	//_DEBUG_PRINT_N_(depth);
 	//scope.enter();
-	std::cout << "fun-declaration: " << node.id << std::endl;
+	//std::cout << "fun-declaration: " << node.id << std::endl;
 	std::vector<Type *> Vars;
 	for (auto param: node.params) {
 		if (param->isarray) {
@@ -149,7 +149,7 @@ void CminusBuilder::visit(syntax_fun_declaration &node) {
 	}
 
 	scope.exit();
-	remove_depth();
+	//remove_depth();
 }
 
 void CminusBuilder::visit(syntax_param &node) {
@@ -159,9 +159,9 @@ void CminusBuilder::visit(syntax_param &node) {
 }
 
 void CminusBuilder::visit(syntax_compound_stmt &node) {
-	add_depth();
-	_DEBUG_PRINT_N_(depth);
-	std::cout << "compound_stmt" << std::endl;
+	//add_depth();
+	//_DEBUG_PRINT_N_(depth);
+	//std::cout << "compound_stmt" << std::endl;
 	// a compound_stmt means a new scope
 	scope.enter();
 	// process var-declaration
@@ -190,21 +190,21 @@ void CminusBuilder::visit(syntax_compound_stmt &node) {
 	is_returned_record = is_returned;
 	is_returned = false;
 	scope.exit();
-	remove_depth();
+	//remove_depth();
 }
 
 void CminusBuilder::visit(syntax_expresion_stmt &node) {
-	add_depth();
-	_DEBUG_PRINT_N_(depth);
-	std::cout << "expression_stmt" << std::endl;
+	//add_depth();
+	//_DEBUG_PRINT_N_(depth);
+	//std::cout << "expression_stmt" << std::endl;
 	node.expression->accept(*this);
-	remove_depth();
+	//remove_depth();
 }
 
 void CminusBuilder::visit(syntax_selection_stmt &node) {
-	add_depth();
-	_DEBUG_PRINT_N_(depth);
-	std::cout << "selection_stmt" << std::endl;
+	//add_depth();
+	//_DEBUG_PRINT_N_(depth);
+	//std::cout << "selection_stmt" << std::endl;
 	curr_op = LOAD;
 	node.expression->accept(*this);
 	// actually this is not needed, as llvm will automatically generate different label name
@@ -268,13 +268,13 @@ void CminusBuilder::visit(syntax_selection_stmt &node) {
 	builder.SetInsertPoint(endBB);
 	curr_block = endBB;
 	is_returned = false;
-	remove_depth();
+	//remove_depth();
 }
 
 void CminusBuilder::visit(syntax_iteration_stmt &node) {
-	add_depth();
-	_DEBUG_PRINT_N_(depth);
-	std::cout << "iteration_stmt" << std::endl;
+	//add_depth();
+	//_DEBUG_PRINT_N_(depth);
+	//std::cout << "iteration_stmt" << std::endl;
 	// iteration_stmt => 
 	//
 	// 	goto start
@@ -301,7 +301,6 @@ void CminusBuilder::visit(syntax_iteration_stmt &node) {
 	}
 	else {
 		expr1 = expression;
-		std::cout << "..." << std::endl;
 	}
 	sprintf(labelname, "loopBodyBB_%d", label_now);
 	auto bodyBB = BasicBlock::Create(context, labelname, curr_func);
@@ -319,13 +318,13 @@ void CminusBuilder::visit(syntax_iteration_stmt &node) {
 	builder.SetInsertPoint(endBB);
 	curr_block = endBB;
 	is_returned = false;
-	remove_depth();
+	//remove_depth();
 }
 
 void CminusBuilder::visit(syntax_return_stmt &node) {
-	add_depth();
-	_DEBUG_PRINT_N_(depth);
-	std::cout << "return_stmt" << std::endl;
+	//add_depth();
+	//_DEBUG_PRINT_N_(depth);
+	//std::cout << "return_stmt" << std::endl;
 	if (node.expression != nullptr) {
 		curr_op = LOAD;
 		node.expression->accept(*this);
@@ -352,13 +351,13 @@ void CminusBuilder::visit(syntax_return_stmt &node) {
 	builder.CreateBr(return_block);
 	is_returned = true;
 	is_returned_record = true;
-	remove_depth();
+	//remove_depth();
 }
 
 void CminusBuilder::visit(syntax_var &node) {
-	add_depth();
-	_DEBUG_PRINT_N_(depth);
-	std::cout << "var: " << node.id << " op: " << (curr_op == LOAD ? "LOAD" : "STORE") << std::endl;
+	//add_depth();
+	//_DEBUG_PRINT_N_(depth);
+	//std::cout << "var: " << node.id << " op: " << (curr_op == LOAD ? "LOAD" : "STORE") << std::endl;
 	switch (curr_op) {
 		case LOAD: {
 			if (node.expression == nullptr) {
@@ -501,26 +500,26 @@ void CminusBuilder::visit(syntax_var &node) {
 			std::cout << "ERROR: wrong var op!" << std::endl;
 		}
 	}
-	remove_depth();
+	//remove_depth();
 }
 
 void CminusBuilder::visit(syntax_assign_expression &node) {
-	add_depth();
-	_DEBUG_PRINT_N_(depth);
-	std::cout << "assign_expression" << std::endl;
+	//add_depth();
+	//_DEBUG_PRINT_N_(depth);
+	//std::cout << "assign_expression" << std::endl;
 
 	curr_op = LOAD;
 	node.expression->accept(*this);
 
 	curr_op = STORE;
 	node.var->accept(*this);
-	remove_depth();
+	//remove_depth();
 }
 
 void CminusBuilder::visit(syntax_simple_expression &node) {
-	add_depth();
-	_DEBUG_PRINT_N_(depth);
-	std::cout << "simple_expression" << std::endl;
+	//add_depth();
+	//_DEBUG_PRINT_N_(depth);
+	//std::cout << "simple_expression" << std::endl;
 
 	curr_op = LOAD;
 	node.additive_expression_l->accept(*this);
@@ -550,13 +549,13 @@ void CminusBuilder::visit(syntax_simple_expression &node) {
 				break;
 		}
 	}
-	remove_depth();
+	//remove_depth();
 }
 
 void CminusBuilder::visit(syntax_additive_expression &node) {
-	add_depth();
-	_DEBUG_PRINT_N_(depth);
-	std::cout << "additive_expression" << std::endl;
+	//add_depth();
+	//_DEBUG_PRINT_N_(depth);
+	//std::cout << "additive_expression" << std::endl;
 
 	if (node.additive_expression == nullptr) {
 		curr_op = LOAD;
@@ -578,13 +577,13 @@ void CminusBuilder::visit(syntax_additive_expression &node) {
 				break;
 		}
 	}
-	remove_depth();
+	//remove_depth();
 }
 
 void CminusBuilder::visit(syntax_term &node) {
-	add_depth();
-	_DEBUG_PRINT_N_(depth);
-	std::cout << "term" << std::endl;
+	//add_depth();
+	//_DEBUG_PRINT_N_(depth);
+	//std::cout << "term" << std::endl;
 
 	if (node.term == nullptr) {
 		curr_op = LOAD;
@@ -606,13 +605,13 @@ void CminusBuilder::visit(syntax_term &node) {
 				break;
 		}
 	}
-	remove_depth();
+	//remove_depth();
 }
 
 void CminusBuilder::visit(syntax_call &node) {
-	add_depth();
-	_DEBUG_PRINT_N_(depth);
-	std::cout << "call: " << node.id << "()" << std::endl;
+	//add_depth();
+	//_DEBUG_PRINT_N_(depth);
+	//std::cout << "call: " << node.id << "()" << std::endl;
 	auto func=scope.find(node.id);
 	if(func==nullptr){
 		std::cout << "ERROR: Unknown function: " << node.id << std::endl;
@@ -624,5 +623,5 @@ void CminusBuilder::visit(syntax_call &node) {
 		args.push_back(expression);
 	}
 	expression=builder.CreateCall(func,args);
-	remove_depth();
+	//remove_depth();
 }

@@ -94,9 +94,9 @@ public:
     return std::move(module);
   }
   // for test usage
-  void add_depth() { depth += 2; }
-  void remove_depth() { depth -= 2; }
-  int depth = 0;
+  //void add_depth() { depth += 2; }
+  //void remove_depth() { depth -= 2; }
+  //int depth = 0;
 private:
   virtual void visit(syntax_program &) override final;
   virtual void visit(syntax_num &) override final;
