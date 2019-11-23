@@ -24,7 +24,6 @@ Value* expression;
 bool is_returned = false;
 bool is_returned_record = false;
 int label_cnt = 0;
-
 // show what to do in syntax_var
 var_op curr_op;
 
@@ -421,7 +420,7 @@ void CminusBuilder::visit(syntax_var &node) {
 					expression = builder.CreateLoad(Type::getInt32Ty(context), gep);
 				}
 				else {
-					// local or global array
+					// local array
 					std::vector<Value *> idx;
 					idx.push_back(ConstantInt::get(context, APInt(32, 0)));
 					idx.push_back(expression);
