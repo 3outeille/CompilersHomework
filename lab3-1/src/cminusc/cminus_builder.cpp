@@ -394,6 +394,24 @@ void CminusBuilder::visit(syntax_var &node) {
 				else {
 					expr = expression;
 				}
+
+				// check if array index is negative
+				auto neg = builder.CreateICmpSLT(expression, ConstantInt::get(context, APInt(32, 0)));
+				char labelname[100];
+				label_cnt++;
+				sprintf(labelname, "arr_neg_%d", label_cnt);
+				auto arrnegBB = BasicBlock::Create(context, labelname, curr_func);
+				sprintf(labelname, "arr_ok_%d", label_cnt);
+				auto arrokBB = BasicBlock::Create(context, labelname, curr_func);
+				builder.CreateCondBr(neg, arrnegBB, arrokBB);
+				builder.SetInsertPoint(arrnegBB);
+				std::vector<Value*> argdum;
+				builder.CreateCall(scope.find("neg_idx_except"), argdum);
+				// add this just to make llvm happy, actually program will abort in call
+				builder.CreateBr(arrokBB);
+				builder.SetInsertPoint(arrokBB);
+				curr_block = arrokBB;
+
 				if (alloca->getType()->getPointerElementType() == PointerType::getInt32PtrTy(context)) {
 					// array reference as pointer
 					auto arrptr = builder.CreateLoad(PointerType::getInt32PtrTy(context), alloca);
@@ -438,6 +456,24 @@ void CminusBuilder::visit(syntax_var &node) {
 				else {
 					expr = expression;
 				}
+
+				// check if array index is negative
+				auto neg = builder.CreateICmpSLT(expression, ConstantInt::get(context, APInt(32, 0)));
+				char labelname[100];
+				label_cnt++;
+				sprintf(labelname, "arr_neg_%d", label_cnt);
+				auto arrnegBB = BasicBlock::Create(context, labelname, curr_func);
+				sprintf(labelname, "arr_ok_%d", label_cnt);
+				auto arrokBB = BasicBlock::Create(context, labelname, curr_func);
+				builder.CreateCondBr(neg, arrnegBB, arrokBB);
+				builder.SetInsertPoint(arrnegBB);
+				std::vector<Value*> argdum;
+				builder.CreateCall(scope.find("neg_idx_except"), argdum);
+				// add this just to make llvm happy, actually program will abort in call
+				builder.CreateBr(arrokBB);
+				builder.SetInsertPoint(arrokBB);
+				curr_block = arrokBB;
+
 				auto alloca = scope.find(node.id);
 				if (alloca->getType() == PointerType::getInt32PtrTy(context)->getPointerTo()) {
 					// array passed by reference, treat as pointer
