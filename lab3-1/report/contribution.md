@@ -11,6 +11,11 @@
 
 ### 苏文治
 
+1. syntax_num，syntax_expresion_stmt，syntax_assign_expression，syntax_simple_expression，syntax_term 的实现
+2. curr_op全局变量设计
+3. 参与 syntax_var 的实现
+4. 部分文档编写
+
 ### PB16001837 朱凡
 
 1. 参与visit(syntax_var）的实现  
