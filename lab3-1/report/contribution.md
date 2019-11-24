@@ -2,13 +2,14 @@
 
 ## 贡献详述
 
-### 古宜民
+### PB17000002 古宜民
+
+1. var_declaration, fun_declaration的实现
+2. compound_stmt, selection_stmt, iteration_stmt, return_stmt的实现
+3. GEP的处理
+4. 部分全局变量设计，部分文档编写
 
 ### 苏文治
-
-### 朱凡
-
-
 
 ### PB16001837 朱凡
 
