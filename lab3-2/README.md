@@ -6,7 +6,7 @@
 
 ## 实验要求
 
-1. 阅读LLVM Pass的介绍，并学会使用`opt`工具
+1. 阅读[LLVM Pass的介绍](http://210.45.114.30/staff/compiler_cminus/wikis/uploads/058cbe3665a47626b0b344042cf26882/llvm_pass%E4%BB%8B%E7%BB%8D.pptx)，并学会使用`opt`工具
 2. 从助教给出的[两组可选Pass](#可选Pass集合)中各选一个，根据从LLVM[官方文档](http://llvm.org/docs/Passes.html)中了解的相关信息和阅读相关源代码，完成任务
 3. 组长应当严格按照模板格式，将组队学习和讨论的过程记录在`report/records.md`当中，讨论至少要有一次。
 4.  报告提交在`report/report.md`中，组员同分
