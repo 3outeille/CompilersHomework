@@ -71,6 +71,22 @@ if (x > 0 && x <= 7) {
 
 该Pass优化了尾递归
 
+## opt使用示例
+
+```bash
+# generate LLVM IR
+# 1. use clang
+# clang generated .ll has "optnone" attribute, you should delete it first
+clang -S -emit-llvm test.c
+# 2. use cminusc
+cminusc -emit-llvm test.cminus
+
+# use opt to optimize IRs
+# use -print-after-all to see the optimization result of each pass
+# use -o <opt-file> to dump optimized IRs to <opt-file>
+opt test.ll -<opt-name1> -<opt-name2> ... -S
+```
+
 ## 如何在lab3-1的编译器中加入优化？
 
 本次实验可以完全使用C语言和LLVM的工具链完成。但是也有些同学可能想要在自己的cminus编译器中加入优化。框架的[这里](http://210.45.114.30/staff/compiler_cminus/blob/master/lab3-1/src/cminusc/main.cpp#L132-135)有这样几行代码：
