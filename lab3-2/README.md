@@ -70,6 +70,7 @@ if (x > 0 && x <= 7) {
 位于`lib/Transforms/Scalar/TailRecursionElimination.cpp`
 
 该Pass优化了尾递归
+注：运行该Pass前应当先运行SROA
 
 ## opt使用示例
 
