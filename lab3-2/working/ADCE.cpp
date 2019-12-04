@@ -125,6 +125,8 @@ class AggressiveDeadCodeElimination {
   bool isLive(BasicBlock *BB) { return BlockInfo[BB].Live; }
 
   /// Mapping of instructions to associated information.
+//seems DenseMap is an optimized unordered_map
+//https://stackoverflow.com/questions/43191216/differences-similarities-between-llvmdensemap-and-stdmap
   DenseMap<Instruction *, InstInfoType> InstInfo;
   bool isLive(Instruction *I) { return InstInfo[I].Live; }
 
@@ -200,6 +202,7 @@ public:
 
 } // end anonymous namespace
 
+//the main algorithm, calling other stuff
 bool AggressiveDeadCodeElimination::performDeadCodeElimination() {
   initialize();
   markLiveInstructions();
@@ -216,6 +219,7 @@ void AggressiveDeadCodeElimination::initialize() {
 
   // We will have an entry in the map for each block so we grow the
   // structure to twice that size to keep the load factor low in the hash table.
+//ok it's just a small optimization
   BlockInfo.reserve(NumBlocks);
   size_t NumInsts = 0;
 
@@ -230,6 +234,7 @@ void AggressiveDeadCodeElimination::initialize() {
   }
 
   // Initialize instruction map and set pointers to block info.
+//this seems similar to above, do this to each instruction, 
   InstInfo.reserve(NumInsts);
   for (auto &BBInfo : BlockInfo)
     for (Instruction &I : *BBInfo.second.BB)
@@ -322,8 +327,11 @@ void AggressiveDeadCodeElimination::initialize() {
       BlocksWithDeadTerminators.insert(BBInfo.second.BB);
 }
 
+//Can't understand
 bool AggressiveDeadCodeElimination::isAlwaysLive(Instruction &I) {
   // TODO -- use llvm::isInstructionTriviallyDead
+//isEHPad: Return true if the instruction is a variety of EH-block. 
+//EH means exception handling?
   if (I.isEHPad() || I.mayHaveSideEffects()) {
     // Skip any value profile instrumentation calls if they are
     // instrumenting constants.
@@ -338,6 +346,7 @@ bool AggressiveDeadCodeElimination::isAlwaysLive(Instruction &I) {
   return true;
 }
 
+//seems we don't need to read this carefully
 // Check if this instruction is a runtime call for value profiling and
 // if it's instrumenting a constant.
 bool AggressiveDeadCodeElimination::isInstrumentsConstant(Instruction &I) {
@@ -350,30 +359,41 @@ bool AggressiveDeadCodeElimination::isInstrumentsConstant(Instruction &I) {
   return false;
 }
 
+//the second step of main process
 void AggressiveDeadCodeElimination::markLiveInstructions() {
   // Propagate liveness backwards to operands.
+//kind of same as DCE?
   do {
     // Worklist holds newly discovered live instructions
     // where we need to mark the inputs as live.
+//this is a inner loop
     while (!Worklist.empty()) {
+//ok first geet instruction from Worklist
+//but this time it's marking Live instead of Dead
       Instruction *LiveInst = Worklist.pop_back_val();
       LLVM_DEBUG(dbgs() << "work live: "; LiveInst->dump(););
 
+//mark Live operands
       for (Use &OI : LiveInst->operands())
         if (Instruction *Inst = dyn_cast<Instruction>(OI))
+//markLive will push Inst into Worklist
           markLive(Inst);
 
+//if it's a PHINode, then mark it Live
       if (auto *PN = dyn_cast<PHINode>(LiveInst))
         markPhiLive(PN);
     }
 
     // After data flow liveness has been identified, examine which branch
     // decisions are required to determine live instructions are executed.
+//what does this do??
+//this seems to be cooperating with the inner loop
     markLiveBranchesFromControlDependences();
 
   } while (!Worklist.empty());
 }
 
+//those markLive stuff
 void AggressiveDeadCodeElimination::markLive(Instruction *I) {
   auto &Info = InstInfo[I];
   if (Info.Live)
@@ -398,7 +418,7 @@ void AggressiveDeadCodeElimination::markLive(Instruction *I) {
         markLive(BB);
   }
   markLive(BBInfo);
-}
+}Inst
 
 void AggressiveDeadCodeElimination::markLive(BlockInfoType &BBInfo) {
   if (BBInfo.Live)
@@ -412,6 +432,7 @@ void AggressiveDeadCodeElimination::markLive(BlockInfoType &BBInfo) {
 
   // Mark unconditional branches at the end of live
   // blocks as live since there is no work to do for them later
+//if a BB is being marked Live, markLive the terminator Inst
   if (BBInfo.UnconditionalBranch)
     markLive(BBInfo.Terminator);
 }
@@ -458,6 +479,8 @@ void AggressiveDeadCodeElimination::markPhiLive(PHINode *PN) {
       NewLiveBlocks.insert(PredBB);
     }
   }
+//from a live PHINode we can discover some live blocks
+//this is ok to understand
 }
 
 void AggressiveDeadCodeElimination::markLiveBranchesFromControlDependences() {
@@ -498,6 +521,7 @@ void AggressiveDeadCodeElimination::markLiveBranchesFromControlDependences() {
 //  Routines to update the CFG and SSA information before removing dead code.
 //
 //===----------------------------------------------------------------------===//
+//this is the third(and last) part of the main process
 bool AggressiveDeadCodeElimination::removeDeadInstructions() {
   // Updates control and dataflow around dead blocks
   updateDeadRegions();
@@ -528,11 +552,13 @@ bool AggressiveDeadCodeElimination::removeDeadInstructions() {
   // that have no side effects and do not influence the control flow or return
   // value of the function, and may therefore be deleted safely.
   // NOTE: We reuse the Worklist vector here for memory efficiency.
+//yes, at this point Worklist should already be empty
   for (Instruction &I : instructions(F)) {
     // Check if the instruction is alive.
     if (isLive(&I))
       continue;
 
+//need to understand this part. else are easy to understand
     if (auto *DII = dyn_cast<DbgInfoIntrinsic>(&I)) {
       // Check if the scope of this variable location is alive.
       if (AliveScopes.count(DII->getDebugLoc()->getScope()))
@@ -665,6 +691,8 @@ void AggressiveDeadCodeElimination::makeUnconditional(BasicBlock *BB,
   InstInfo.erase(PredTerm);
   PredTerm->eraseFromParent();
 }
+
+//seems below are all wrapper codes
 
 //===----------------------------------------------------------------------===//
 //
