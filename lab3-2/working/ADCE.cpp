@@ -219,12 +219,14 @@ void AggressiveDeadCodeElimination::initialize() {
 
   // We will have an entry in the map for each block so we grow the
   // structure to twice that size to keep the load factor low in the hash table.
-//ok it's just a small optimization
+//ok it's just a small optimization: first all dummy BInfo and IInfo are allocaated, 
+//then entries in those B/IInfo are filled out
   BlockInfo.reserve(NumBlocks);
   size_t NumInsts = 0;
 
   // Iterate over blocks and initialize BlockInfoVec entries, count
   // instructions to size the InstInfo hash table.
+//this iteration is for BB in Function, BB, Terminator and UnconditionalBranch are calculated
   for (auto &BB : F) {
     NumInsts += BB.size();
     auto &Info = BlockInfo[&BB];
@@ -234,22 +236,28 @@ void AggressiveDeadCodeElimination::initialize() {
   }
 
   // Initialize instruction map and set pointers to block info.
-//this seems similar to above, do this to each instruction, 
+//similar to above, do this to each instruction, 
+//each InstInfoType has only two attr, Live and Block. Block is determined here. Trivial. 
   InstInfo.reserve(NumInsts);
   for (auto &BBInfo : BlockInfo)
+//first and second are iterator features, means key and value in pair in map
+//here key is the BasicBlock, value is the BlockInfo
     for (Instruction &I : *BBInfo.second.BB)
       InstInfo[&I].Block = &BBInfo.second;
 
   // Since BlockInfoVec holds pointers into InstInfo and vice-versa, we may not
   // add any more elements to either after this point.
+//another initialize, set up terminator
   for (auto &BBInfo : BlockInfo)
     BBInfo.second.TerminatorLiveInfo = &InstInfo[BBInfo.second.Terminator];
 
   // Collect the set of "root" instructions that are known live.
+//seems this act as the "seeds" of the whole procedure
   for (Instruction &I : instructions(F))
     if (isAlwaysLive(I))
       markLive(&I);
 
+//???
   if (!RemoveControlFlowFlag)
     return;
 
@@ -315,6 +323,7 @@ void AggressiveDeadCodeElimination::initialize() {
   }
 
   // Treat the entry block as always live
+//this is another starter condition
   auto *BB = &F.getEntryBlock();
   auto &EntryInfo = BlockInfo[BB];
   EntryInfo.Live = true;
@@ -577,6 +586,8 @@ bool AggressiveDeadCodeElimination::removeDeadInstructions() {
     I->eraseFromParent();
   }
 
+//why this can tell whether instructions has been eliminated?
+//this seems to be cooperating with the inner loop
   return !Worklist.empty();
 }
 
