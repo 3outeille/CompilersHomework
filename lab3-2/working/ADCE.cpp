@@ -289,6 +289,7 @@ void AggressiveDeadCodeElimination::initialize() {
     // Iterate over blocks in depth-first pre-order and
     // treat all edges to a block already seen as loop back edges
     // and mark the branch live it if there is a back edge.
+//the main depth-first iteration
     for (auto *BB: depth_first_ext(&F.getEntryBlock(), State)) {
       Instruction *Term = BB->getTerminator();
       if (isLive(Term))
@@ -427,7 +428,7 @@ void AggressiveDeadCodeElimination::markLive(Instruction *I) {
         markLive(BB);
   }
   markLive(BBInfo);
-}Inst
+}
 
 void AggressiveDeadCodeElimination::markLive(BlockInfoType &BBInfo) {
   if (BBInfo.Live)
@@ -592,6 +593,7 @@ bool AggressiveDeadCodeElimination::removeDeadInstructions() {
 }
 
 // A dead region is the set of dead blocks with a common live post-dominator.
+//this is updateDeadRegions, seems it just do some cleanup to make the following deletion safe, don't need to understand in detail
 void AggressiveDeadCodeElimination::updateDeadRegions() {
   LLVM_DEBUG({
     dbgs() << "final dead terminator blocks: " << '\n';
