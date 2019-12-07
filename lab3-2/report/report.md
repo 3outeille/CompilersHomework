@@ -104,7 +104,8 @@ markLiveInstructions
 st=>start: Start
 op1=>operation: 标记：从WorkList中取出当前已知活的Instruction，
 调用markLive标记其操作数为活，如果是Phi指令则使用markPhiLive标记。
-markLive同时会把指令所在的BasicBlock也标记为活，进而通过参数是BlockInfoType和Instruction的markLive递归地把BasicBlock的终结指令和等指令标记为活
+markLive同时会把指令所在的BasicBlock也标记为活，
+进而通过参数是BlockInfoType和Instruction的markLive递归地把BasicBlock的终结指令和等指令标记为活
 op2=>operation: markLiveBranchesFromControlDependences
 condi=>condition: WorkList为空？
 end=>end: End
@@ -125,6 +126,8 @@ end=>end: End
 
 st->op1->op5->end
 ```
+
+**程序及函数细节**
 
 
 
