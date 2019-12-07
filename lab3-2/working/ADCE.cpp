@@ -378,7 +378,7 @@ void AggressiveDeadCodeElimination::markLiveInstructions() {
     // where we need to mark the inputs as live.
 //this is a inner loop
     while (!Worklist.empty()) {
-//ok first geet instruction from Worklist
+//ok first get instruction from Worklist
 //but this time it's marking Live instead of Dead
       Instruction *LiveInst = Worklist.pop_back_val();
       LLVM_DEBUG(dbgs() << "work live: "; LiveInst->dump(););
@@ -520,6 +520,7 @@ void AggressiveDeadCodeElimination::markLiveBranchesFromControlDependences() {
   NewLiveBlocks.clear();
 
   // Dead terminators which control live blocks are now marked live.
+//ok we get the results stored in IDFBlocks
   for (auto *BB : IDFBlocks) {
     LLVM_DEBUG(dbgs() << "live control in: " << BB->getName() << '\n');
     markLive(BB->getTerminator());

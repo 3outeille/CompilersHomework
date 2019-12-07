@@ -103,88 +103,44 @@ int main(void) {
 
 #### 流程
 
+**overview**
+
 adce作用于Function，对Function中的每个BasicBlock和每条Instruction安排了结构体`BlockInfoType`和`InstInfoType`用于记录代码的信息。类`AggressiveDeadCodeElimination`记录了分析的数据并定义了各种分析函数和辅助函数。
+
+adce的整体思路是，先在待优化的代码片段中找出开始就能确定为活的指令（比如函数开始entry的第一条指令、函数最后返回的指令等），再和dce类似，由已知的活指令，以大致和执行顺序相反的顺序，不断地反向寻找由已知活指令能推导出为活的指令（比如一条活指令的操作数为活，如果一个BasicBlock为活，那么它的最后一条控制流转移指令也为活）。并且为了得知程序流程的转移过程，adce中的很多部分是以BasicBlock为单位进行分析的。
 
 adce主要流程分为3步：
 
-```flow
-st=>start: Start
-op1=>operation: initialize
-主要任务是初始化结构体，
-以及找到开始时就能确定为活的指令作为活指令查找的初始条件
-op2=>operation: markLiveInstuctions
-循环地从已知的活指令查找标记更多的活指令
-op3=>operation: removeDeadInstructions
-遍历指令，找出未被标记为活（死）的指令，并删除
-e=>end
-
-st->op1->op2->op3->e
-```
-
-数据结构
-
-
+![](src/adce_overview.png)
 
 **具体流程**
 
-以下流程图中未描述Debug信息的处理。
-
 initialize
 
-```flow
-st=>start: Start
-op1=>operation: 初始化：遍历每个BasicBlock和Instruction，更新BlockInfoType和InstInfoType数据结构
-op2=>operation: 标记：简单遍历每条Instruction，使用isAlwaysLive找出开始时就能判断为活的指令并标记
-op3=>operation: 标记：深度优先遍历BasicBlock，如果有回边则标记标记终结指令为活（？）
-op4=>operation: 标记：查找不以return结束的BasicBlock并标记其终结指令为活（？）
-op5=>operation: 标记&计算：标记开始BasicBlock为活，并计算收集终结指令为死的BasicBlock
-end=>end: End
+![](./src/adce_init.png)
 
-st->op1->op2->op3->op4->op5->end
-```
+markLiveInstructions，是相对重要和复杂的过程
 
-markLiveInstructions
-
-```flow
-st=>start: Start
-op1=>operation: 标记：从WorkList中取出当前已知活的Instruction，
-调用markLive标记其操作数为活，如果是Phi指令则使用markPhiLive标记。
-markLive同时会把指令所在的BasicBlock也标记为活，
-进而通过参数是BlockInfoType和Instruction的markLive递归地把BasicBlock的终结指令和等指令标记为活
-op2=>operation: markLiveBranchesFromControlDependences
-condi=>condition: WorkList为空？
-end=>end: End
-
-st->op1->op2->condi
-condi(yes)->end
-condi(no)->op1
-```
-
-removeDeadInstructions
-
-```flow
-st=>start: Start
-op1=>operation: updateDeadRegions（其中使用了computeReversePostOrder（？）、makeUnconditional（？））：
-
-op5=>operation: 删除：把被找出的死代码删除，完成整个adce流程
-end=>end: End
-
-st->op1->op5->end
-```
-
-**程序及函数细节**
+![](./src/adce_markLiveInstructions.png)
 
 
+removeDeadInstructions，进行代码分析后的删除工作
 
-按要求说明选择的Pass和进行相关任务的回答
+![](./src/adce_removeDeadInstructions.png)
+
+**重要函数细节**
 
 
 
 ## 实验总结
 
-本次实验我们有机会阅读项目源码，
+本次实验我们体会了阅读大项目源代码，遇到了一些困难，也有很大的收获。
 
-同时发现源码中使用了各种各样的C++特性和方便的自定义的数据结构，感到自己C++水平有待提升
+我们发现源码中使用了各种各样的C++特性和方便的自定义的数据结构，整体代码风格非常好，我们感到自己的C++水平有待提升。
+
+虽然LLVM的代码注释很丰富，但我们发现仅仅阅读了注释后，仍然不能很好的把握代码的含义。而很多库函数在文档上也没能找到资料，找到函数实现处的代码又难以看懂，一些细节函数（比如depth_first_ext等）在stackoverflow上也没有任何人提问，只能通过函数名猜测功能。在反复阅读代码后，我们较为深入的理解了DCE的流程，大致理解了ADCE的流程。对于ADCE，我们只知道代码做了什么，而还没有完全明白为什么这么做能够保证正确性：为什么初始条件设置的足够，不多也不少？为什么能保证markLive复杂的递归调用能够不出偏差的完成任务？这些问题还需要有机会继续研究。
+
+本次实验中我们也尝试了一些工具的使用。我们最开始的想法是在一个云IDE上合作阅读代码，个人随看随添加注释，以便于理解。但后来发现我们自己搭建的云IDE效果并不是很理想，并且相互讨论研究代码的效果远远好过看别人写的注释，于是就没有继续使用。在流程图绘制上，开始尝试了使用markdown的一些特性，比如flow绘制流程图，但功能极其有限，并且无法直接在Gitlab的markdown中展示。于是选用了[draw.io](https://www.draw.io)进行流程图绘制，效果很好。
 
 ## 实验反馈
 
