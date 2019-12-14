@@ -28,7 +28,7 @@
 
 - RegAllocFast.cpp 中的几个问题
 
-  * RegAllocFast* 函数的执行流程？
+  * *RegAllocFast* 函数的执行流程？
 
     答：......
 
