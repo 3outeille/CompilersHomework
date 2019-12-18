@@ -38,7 +38,22 @@
 
   * *calcSpillCost* 函数的执行流程？
 
-    答：......
+    答：*calcSpillCost*作用于Physical Register上，用于计算如果这个物理寄存器被换出到内存需要付出的代价。此函数分两种情况，即这个物理寄存器是否处于disabled状态。
+
+    - 如果没有被disabled，即处于活跃状态，则直接分析该物理寄存器的状态：
+
+      - 可用(regFree)代价为0；
+
+      - 被保留不可用(regReserved)返回不可能；
+
+      - 被分给了虚拟寄存器则再判断其是否被修改过需要写回内存(Dirty)，赋予其代价spillDirty(100)或spillClean(50)。
+
+        因为如果VirtReg不Dirty，spill带来的代价为再次使用时Load一次访存；而Dirty需要进行写回内存操作，代价为Store一次访存，用时Load再一次访存，其代价为不Dirty的二倍，所以spillDirty为spillClean的二倍。
+
+    - 如果被disabled，说明该寄存器被其他变量占用（可能因为alias被分割并分配给了很多其他变量），而所有这些变量都要被spill。此时需要遍历所有的alias，对每个alias作类似第一种情况的分析。
+      - alias为可用，则代价稍微增加1(++Cost)，这保证即使是free的，alias也是越少越好；
+      - alias被保留不可用，则整个寄存器也不可用，返回Impossible；
+      - alias被分给虚拟寄存器，则同上判断是否Dirty，带来一个50或100较大的Cost。
 
   * *hasTiedOps*，*hasPartialRedefs，hasEarlyClobbers* 变量的作用？
 

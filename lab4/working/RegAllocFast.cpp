@@ -109,6 +109,8 @@ namespace {
       /// A disabled register is not available for allocation, but an alias may
       /// be in use. A register can only be moved out of the disabled state if
       /// all aliases are disabled.
+      //the "disabled" in "disabled register" means disabled for allocation(in use by other variables)
+      //the "disabled" in "aliases are disabled" means no aliases anymore, thus it can be free
       regDisabled,
 
       /// A free register is not currently in use and can be allocated
@@ -331,6 +333,7 @@ void RegAllocFast::addKillFlag(const LiveReg &LR) {
 }
 
 /// Mark virtreg as no longer available.
+//mark the corresponding physical register as free
 void RegAllocFast::killVirtReg(LiveReg &LR) {
   addKillFlag(LR);
   assert(PhysRegState[LR.PhysReg] == LR.VirtReg &&
@@ -502,14 +505,19 @@ void RegAllocFast::definePhysReg(MachineBasicBlock::iterator MI,
 /// for allocation. Returns 0 when PhysReg is free or disabled with all aliases
 /// disabled - it can be allocated directly.
 /// \returns spillImpossible when PhysReg or an alias can't be spilled.
+//we need to understand this
 unsigned RegAllocFast::calcSpillCost(MCPhysReg PhysReg) const {
   if (isRegUsedInInstr(PhysReg)) {
     LLVM_DEBUG(dbgs() << printReg(PhysReg, TRI)
                       << " is already used in instr.\n");
     return spillImpossible;
   }
+  //so what means a register is disabled?
+  //register is not disbled
+  //process the corresponding virtual register
   switch (unsigned VirtReg = PhysRegState[PhysReg]) {
   case regDisabled:
+    //this is handled below
     break;
   case regFree:
     return 0;
@@ -518,25 +526,34 @@ unsigned RegAllocFast::calcSpillCost(MCPhysReg PhysReg) const {
                       << printReg(PhysReg, TRI) << " is reserved already.\n");
     return spillImpossible;
   default: {
+    //find the virtual register itself, and check it's status
     LiveRegMap::const_iterator LRI = findLiveVirtReg(VirtReg);
     assert(LRI != LiveVirtRegs.end() && LRI->PhysReg &&
            "Missing VirtReg entry");
+      //spillDirty: 100, spillClean: 50
     return LRI->Dirty ? spillDirty : spillClean;
   }
   }
 
   // This is a disabled register, add up cost of aliases.
+  //the cost is much bigger than not disbled registers
   LLVM_DEBUG(dbgs() << printReg(PhysReg, TRI) << " is disabled.\n");
   unsigned Cost = 0;
+  //MCRegAliasIterator enumerates all registers aliasing Reg. 
+  //What is (physical) register aliasing??
+  //seems same as in class lecture notes
   for (MCRegAliasIterator AI(PhysReg, TRI, false); AI.isValid(); ++AI) {
     MCPhysReg Alias = *AI;
     switch (unsigned VirtReg = PhysRegState[Alias]) {
     case regDisabled:
+      //seems a disabled alias means good thing
       break;
     case regFree:
+      //cost increased slightly
       ++Cost;
       break;
     case regReserved:
+      //directly turn case into impossible
       return spillImpossible;
     default: {
       LiveRegMap::const_iterator LRI = findLiveVirtReg(VirtReg);
@@ -779,6 +796,7 @@ void RegAllocFast::handleThroughOperands(MachineInstr &MI,
     if (!MO.isReg()) continue;
     unsigned Reg = MO.getReg();
     if (!TargetRegisterInfo::isVirtualRegister(Reg)) continue;
+    //MO is a virtual register
     if (MO.isUse()) {
       if (!MO.isTied()) continue;
       LLVM_DEBUG(dbgs() << "Operand " << I << "(" << MO
@@ -991,6 +1009,7 @@ void RegAllocFast::allocateInstruction(MachineInstr &MI) {
     }
   }
 
+  //if it's a call then spill all
   unsigned DefOpEnd = MI.getNumOperands();
   if (MI.isCall()) {
     // Spill all virtregs before a call. This serves one purpose: If an
