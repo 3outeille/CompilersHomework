@@ -507,6 +507,7 @@ void RegAllocFast::definePhysReg(MachineBasicBlock::iterator MI,
 /// \returns spillImpossible when PhysReg or an alias can't be spilled.
 //we need to understand this
 unsigned RegAllocFast::calcSpillCost(MCPhysReg PhysReg) const {
+  //used in current instruction means impossible to spill
   if (isRegUsedInInstr(PhysReg)) {
     LLVM_DEBUG(dbgs() << printReg(PhysReg, TRI)
                       << " is already used in instr.\n");
@@ -613,6 +614,7 @@ void RegAllocFast::allocVirtReg(MachineInstr &MI, LiveReg &LR, unsigned Hint) {
     }
   }
 
+  //here is where calcSpillCost is used
   MCPhysReg BestReg = 0;
   unsigned BestCost = spillImpossible;
   for (MCPhysReg PhysReg : AllocationOrder) {
@@ -680,6 +682,7 @@ MCPhysReg RegAllocFast::defineVirtReg(MachineInstr &MI, unsigned OpNum,
 
 /// Make sure VirtReg is available in a physreg and return it.
 RegAllocFast::LiveReg &RegAllocFast::reloadVirtReg(MachineInstr &MI,
+					           //OpNum is to get the corresponding MachineOperand
                                                    unsigned OpNum,
                                                    unsigned VirtReg,
                                                    unsigned Hint) {
@@ -689,6 +692,7 @@ RegAllocFast::LiveReg &RegAllocFast::reloadVirtReg(MachineInstr &MI,
   bool New;
   std::tie(LRI, New) = LiveVirtRegs.insert(LiveReg(VirtReg));
   MachineOperand &MO = MI.getOperand(OpNum);
+  //if don't have physreg then allocate one
   if (!LRI->PhysReg) {
     allocVirtReg(MI, *LRI, Hint);
     reload(MI, VirtReg, LRI->PhysReg);
@@ -730,6 +734,7 @@ RegAllocFast::LiveReg &RegAllocFast::reloadVirtReg(MachineInstr &MI,
 bool RegAllocFast::setPhysReg(MachineInstr &MI, MachineOperand &MO,
                               MCPhysReg PhysReg) {
   bool Dead = MO.isDead();
+  //no subreg and things are easy
   if (!MO.getSubReg()) {
     MO.setReg(PhysReg);
     MO.setIsRenamable(true);
@@ -758,7 +763,8 @@ bool RegAllocFast::setPhysReg(MachineInstr &MI, MachineOperand &MO,
 
 // Handles special instruction operand like early clobbers and tied ops when
 // there are additional physreg defines.
-//this is called only once, right after the first scan
+//this is called only once, right after the first scan, seems to deal with inline asm
+//"additional physreg defines" means inline asm?
 void RegAllocFast::handleThroughOperands(MachineInstr &MI,
                                          SmallVectorImpl<unsigned> &VirtDead) {
   LLVM_DEBUG(dbgs() << "Scanning for through registers:");
@@ -890,6 +896,7 @@ void RegAllocFast::allocateInstruction(MachineInstr &MI) {
   const MCInstrDesc &MCID = MI.getDesc();
 
   // If this is a copy, we may be able to coalesce.
+  //seems just a piece of tricky optimization
   unsigned CopySrcReg = 0;
   unsigned CopyDstReg = 0;
   unsigned CopySrcSub = 0;
@@ -907,6 +914,7 @@ void RegAllocFast::allocateInstruction(MachineInstr &MI) {
   // First scan.
   // Mark physreg uses and early clobbers as used.
   // Find the end of the virtreg operands
+  //first scan is sort of character determinating and type checking 
   unsigned VirtOpEnd = 0;
   //we need to understand these flags
   bool hasTiedOps = false;
@@ -938,6 +946,8 @@ void RegAllocFast::allocateInstruction(MachineInstr &MI) {
 	///by the MachineInstr before all input registers are read.  This is used to
 	///model the GCC inline asm '&' constraint modifier.
 	//from https://llvm.org/doxygen/MachineOperand_8h_source.html#l00143
+	//https://gcc.gnu.org/onlinedocs/gcc/Modifiers.html#Modifiers
+	//this operand may not lie in a register that is read by the instruction or as part of any memory address
         if (MO.isEarlyClobber())
           hasEarlyClobbers = true;
 	//seems hasPartialRedefs means 
@@ -956,7 +966,7 @@ void RegAllocFast::allocateInstruction(MachineInstr &MI) {
                     (MO.isImplicit() || MO.isDead()) ? regFree : regReserved);
       hasEarlyClobbers = true;
     } else
-      //def of a physical register
+      //def of a physical register??
       hasPhysDefs = true;
   }
 
@@ -969,6 +979,7 @@ void RegAllocFast::allocateInstruction(MachineInstr &MI) {
   // sure the same register is allocated to uses and defs.
   // We didn't detect inline asm tied operands above, so just make this extra
   // pass for all inline asm.
+  //ok this part just handle inline asm, can be skipped
   if (MI.isInlineAsm() || hasEarlyClobbers || hasPartialRedefs ||
       (hasTiedOps && (hasPhysDefs || MCID.getNumDefs() > 1))) {
     handleThroughOperands(MI, VirtDead);
@@ -982,14 +993,20 @@ void RegAllocFast::allocateInstruction(MachineInstr &MI) {
   // Second scan.
   // Allocate virtreg uses.
   for (unsigned I = 0; I != VirtOpEnd; ++I) {
+    //traverse the operands
     MachineOperand &MO = MI.getOperand(I);
     if (!MO.isReg()) continue;
     unsigned Reg = MO.getReg();
     if (!TargetRegisterInfo::isVirtualRegister(Reg)) continue;
+    //deal with virtual registers
     if (MO.isUse()) {
+      //here CopyDstReg(which is the 0th operand) is just a Hint for potentially allocation
+      //the reload can do many interesting things, including newly allocate a physreg to it
       LiveReg &LR = reloadVirtReg(MI, I, Reg, CopyDstReg);
       MCPhysReg PhysReg = LR.PhysReg;
+      //
       CopySrcReg = (CopySrcReg == Reg || CopySrcReg == PhysReg) ? PhysReg : 0;
+      //assign the physreg to MachineOperand: virtreg to physreg
       if (setPhysReg(MI, MO, PhysReg))
         killVirtReg(LR);
     }
@@ -1005,6 +1022,8 @@ void RegAllocFast::allocateInstruction(MachineInstr &MI) {
       if (!Reg || !TargetRegisterInfo::isPhysicalRegister(Reg)) continue;
       // Look for physreg defs and tied uses.
       if (!MO.isDef() && !MO.isTied()) continue;
+      //found physical register in MachineOperand and it isDef and isTied, 
+      //mark it as used(thus impossible to spill, etc)
       markRegUsedInInstr(Reg);
     }
   }

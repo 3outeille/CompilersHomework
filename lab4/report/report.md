@@ -30,7 +30,14 @@
 
   * *RegAllocFast* 函数的执行流程？
 
-    答：......
+    答：
+
+    - 第一次扫描：
+      - 确定指令属性，初始化
+      - 对内联汇编特殊处理
+    - 第二次扫描：
+      - 对对应于Virtual Register的操作数进行虚拟寄存器分配，并分配该虚拟寄存器对应的物理寄存器
+    - 第三次扫描：
 
   * *allocateInstruction* 函数有几次扫描过程以及每一次扫描的功能？
 
@@ -38,7 +45,11 @@
 
   * *calcSpillCost* 函数的执行流程？
 
-    答：*calcSpillCost*作用于Physical Register上，用于计算如果这个物理寄存器被换出到内存需要付出的代价。此函数分两种情况，即这个物理寄存器是否处于disabled状态。
+    答：*calcSpillCost*作用于Physical Register上，用于计算如果这个物理寄存器被换出到内存需要付出的代价。
+
+    - 首先判断寄存器是否在本条指令中被使用，如果被使用则不可spill，返回impossible；
+
+    如果不在当前指令被使用，函数分为两种情况，即这个物理寄存器是否处于disabled状态。
 
     - 如果没有被disabled，即处于活跃状态，则直接分析该物理寄存器的状态：
 
@@ -57,7 +68,11 @@
 
   * *hasTiedOps*，*hasPartialRedefs，hasEarlyClobbers* 变量的作用？
 
-    答：......
+    答：各个变量的含义：
+    
+    - *hasTiedOps*：两个操作数为Tied意为这两个操作数的限制为必须对应于同一个寄存器。如果一条指令中有操作数包含了这种限制，则hasTiedOps为真。
+    - *hasPartialRedefs*：Partial Redefination指一个寄存器的一部分(subregister)被重新定义。
+    - *hasEarlyClobbers*：earlyclobber的操作数表示这个操作数在指令执行结束前就被（根据输入操作数）写覆盖了(Ref: [gcc](https://gcc.gnu.org/onlinedocs/gcc/Modifiers.html#Modifiers))。因此这一操作数不能被存储在这条指令会读取的寄存器中，也不能存储在
 
 - 书上所讲的算法与LLVM源码中的实现之间的不同点
 
