@@ -8,21 +8,28 @@
 
 请按照自己的理解，写明本次实验需要干什么
 
-## 报告内容 
+## 报告内容
 
 #### 1. RISC-V 机器代码的生成和运行
 
 - LLVM 8.0.1适配RISC-V
 
-  ......
+  如图，根据文档重新编译使得LLVM 8.0.1适配RISC-V：
+  ![1_1_1](src/1_1_1.png)  
+  ...  
+  ![1_1_2](src/1_1_2.png)  
+  ...  
+  ![1_1_3](src/1_1_3.png)  
 
 - lab3-0 GCD样例 LLVM IR 生成 RISC-V源码的过程
 
-  ......
+  预先完成riscv-gnu-toolchain的编译安装，感谢issues#259中提供的源代码压缩包;之后如图根据文档先使用clang和llc对GCD样例程序生成汇编，接着使用riscv版的gcc对其生成执行程序，这一步之前需将riscv-gnu-toolchain的安装路径/bin加入PATH中：
+  ![1_2](src/1_2.png)  
 
 - 安装 Spike模拟器并运行上述生成的RISC-V源码
 
-  ......
+  预先由github得到riscv-pk和riscv-isa-sim(spike模拟器)的源码，并编译安装在和riscv-gnu-toolchain同一路径下，并且除上一步中已加入的路径，还需将riscv-gnu-toolchain的安装路径/riscv64-unknown-elf/bin即pk可执行文件所在路径加入PATH中或直接在命令中指定；接着根据文档调试上一步得到的可执行文件如图，成功执行：
+  ![1_3](src/1_3.png)  
 
 #### 2. LLVM源码阅读与理解
 
@@ -31,7 +38,24 @@
   * *RegAllocFast* 函数的执行流程？
 
     答：
+    
+    虚拟寄存器与物理寄存器的关系：
+    http://llvm.1065342.n5.nabble.com/Virtual-register-td8533.html
 
+    createFastRegisterAllocator 创建 RegAllocFast 实例
+    对每个Function执行runOnMachineFunction
+        初始化虚拟寄存器到物理寄存器的map
+        对每个BasicBlock执行allocateBasicBlock
+            Add live-in registers as live.？？？ line 1126
+            对每条指令，执行allocateInstruction
+            Spill 物理寄存器（出口处的活跃变量？？？）
+            Erase all the coalesced copies.  (why :becauseLiveVirtRegs might refer to the instrs.)
+        移除虚拟寄存器
+
+  * *allocateInstruction* 函数有几次扫描过程以及每一次扫描的功能？
+
+    答：
+    
     - 第一次扫描：
       - 确定指令属性，初始化
       - 对内联汇编特殊处理
@@ -39,10 +63,6 @@
       - 对对应于Virtual Register的操作数进行虚拟寄存器分配，并分配该虚拟寄存器对应的物理寄存器
       - 
     - 第三次扫描：
-
-  * *allocateInstruction* 函数有几次扫描过程以及每一次扫描的功能？
-
-    答：......
 
   * *calcSpillCost* 函数的执行流程？
 
