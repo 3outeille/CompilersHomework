@@ -763,7 +763,7 @@ bool RegAllocFast::setPhysReg(MachineInstr &MI, MachineOperand &MO,
 
 // Handles special instruction operand like early clobbers and tied ops when
 // there are additional physreg defines.
-//this is called only once, right after the first scan, seems to deal with inline asm
+//this is called only once, right after the first scan
 //"additional physreg defines" means inline asm?
 void RegAllocFast::handleThroughOperands(MachineInstr &MI,
                                          SmallVectorImpl<unsigned> &VirtDead) {
@@ -979,7 +979,6 @@ void RegAllocFast::allocateInstruction(MachineInstr &MI) {
   // sure the same register is allocated to uses and defs.
   // We didn't detect inline asm tied operands above, so just make this extra
   // pass for all inline asm.
-  //ok this part just handle inline asm, can be skipped
   if (MI.isInlineAsm() || hasEarlyClobbers || hasPartialRedefs ||
       (hasTiedOps && (hasPhysDefs || MCID.getNumDefs() > 1))) {
     handleThroughOperands(MI, VirtDead);
@@ -1022,7 +1021,7 @@ void RegAllocFast::allocateInstruction(MachineInstr &MI) {
       if (!Reg || !TargetRegisterInfo::isPhysicalRegister(Reg)) continue;
       // Look for physreg defs and tied uses.
       if (!MO.isDef() && !MO.isTied()) continue;
-      //found physical register in MachineOperand and it isDef and isTied, 
+      //found physical register in MachineOperand and it isDef or isTied, 
       //mark it as used(thus impossible to spill, etc)
       markRegUsedInInstr(Reg);
     }
@@ -1045,11 +1044,12 @@ void RegAllocFast::allocateInstruction(MachineInstr &MI) {
   // Third scan.
   // Allocate defs and collect dead defs.
   for (unsigned I = 0; I != DefOpEnd; ++I) {
+    //again traverse operands
     const MachineOperand &MO = MI.getOperand(I);
     if (!MO.isReg() || !MO.isDef() || !MO.getReg() || MO.isEarlyClobber())
       continue;
     unsigned Reg = MO.getReg();
-
+    //we get registers that are isDef, getReg not null, and isEarlyClobber
     if (TargetRegisterInfo::isPhysicalRegister(Reg)) {
       if (!MRI->isAllocatable(Reg)) continue;
       definePhysReg(MI, Reg, MO.isDead() ? regFree : regReserved);
@@ -1068,6 +1068,7 @@ void RegAllocFast::allocateInstruction(MachineInstr &MI) {
   // because we are crerating our own kill flags, and they are always at the
   // last use.
   for (unsigned VirtReg : VirtDead)
+    //killVirtReg frees the physreg associated with the virtreg
     killVirtReg(VirtReg);
   VirtDead.clear();
 
