@@ -85,8 +85,12 @@
     答：各个变量的含义：
     
     - *hasTiedOps*：两个操作数为Tied意为这两个操作数的限制为必须对应于同一个寄存器。如果一条指令中有操作数包含了这种限制，则hasTiedOps为真。
-    - *hasPartialRedefs*：Partial Redefination指一个寄存器的一部分(subregister)被重新定义。
+    
+    - *hasPartialRedefs*：Partial Redefination指某个寄存器的一部分(subregister)被修改(define)，并且这个寄存器在这条指令中需要被读，所以叫”部分被重定义“。
+    
     - *hasEarlyClobbers*：earlyclobber的操作数表示这个操作数在指令执行结束前就被（根据输入操作数）写覆盖了(Ref: [gcc](https://gcc.gnu.org/onlinedocs/gcc/Modifiers.html#Modifiers))。因此这一操作数不能被存储在这条指令会读取的寄存器中，也不能存储在
+    
+       如果一条指令(MachineInstruction)中出现了这些特殊的性质，在寄存器分配上就需要特殊处理。
 
 - 书上所讲的算法与LLVM源码中的实现之间的不同点
 
