@@ -1,18 +1,23 @@
 # lab4实验报告
 
 小组成员 姓名 学号
+
 PB17000002 古宜民（队长）
+
 PB15081586 苏文治
+
 PB16001837 朱凡
 
 ## 实验要求
 
 1. RISC-V 机器代码的生成和运行
+
     - 重新编译LLVM使得LLVM支持RISC-V
     - 生成RISC-V源码
     - 使用模拟器运行RISC-V源码
 
 2. LLVM源码阅读与理解
+
     - 阅读RegAllocFast.cpp，了解文件执行流程，并关注几个重点函数和变量的作用
     - 与龙书的寄存器分配算法比较，分析不同点
 
@@ -23,6 +28,7 @@ PB16001837 朱凡
 - LLVM 8.0.1适配RISC-V
 
   如图，根据文档重新编译使得LLVM 8.0.1适配RISC-V：
+  
   ![1_1_1](src/1_1_1.png)
   ...
   ![1_1_2](src/1_1_2.png)
@@ -32,11 +38,13 @@ PB16001837 朱凡
 - lab3-0 GCD样例 LLVM IR 生成 RISC-V源码的过程
 
   预先完成riscv-gnu-toolchain的编译安装，感谢issues#259中提供的源代码压缩包;之后如图根据文档先使用clang和llc对GCD样例程序生成汇编，接着使用riscv版的gcc对其生成执行程序，这一步之前需将riscv-gnu-toolchain的安装路径/bin加入PATH中：
+  
   ![1_2](src/1_2.png)
 
 - 安装 Spike模拟器并运行上述生成的RISC-V源码
 
   预先由github得到riscv-pk和riscv-isa-sim(spike模拟器)的源码，并编译安装在和riscv-gnu-toolchain同一路径下，并且除上一步中已加入的路径，还需将riscv-gnu-toolchain的安装路径/riscv64-unknown-elf/bin即pk可执行文件所在路径加入PATH中或直接在命令中指定；接着根据文档调试上一步得到的可执行文件如图，成功执行：
+  
   ![1_3](src/1_3.png)
 
 #### 2. LLVM源码阅读与理解
