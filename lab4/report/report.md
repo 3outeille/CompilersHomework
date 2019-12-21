@@ -1,8 +1,8 @@
 # lab4实验报告
 
-组长 姓名 学号
+组长 古宜民 PB17000002
 
-小组成员 姓名 学号
+小组成员 苏文治 PB15081586 朱凡 PB16001837
 
 ## 实验要求
 
@@ -80,14 +80,14 @@
       
     - 第三次扫描：把物理寄存器的defs情况标记成已使用，从而为虚拟寄存器的defs情况的分配做准备
     
-        - 扫描全部操作数，对物理寄存器，如果物理寄存器是dead（指在后续指令中不会被用到），标记为regFree（后续可以被分配给虚拟寄存器），如果不是dead，标记为regReserved（后续不会被分配）
+        - 扫描全部操作数，对物理寄存器，如果这个操作数（MachineOperand）是dead（指在后续指令中不会被用到），标记为regFree（存储的值不用了，后续可以被分配给虚拟寄存器），如果不是dead，标记为regReserved（存储的值还要继续使用，不能被分配）
         
     - 第四次扫描：为虚拟寄存器的defs情况分配物理寄存器
     
         - 扫描所有操作数，为是def情况的虚拟寄存器调用setPhysReg，分配物理寄存器
         
         - 清理剩余的虚拟寄存器信息
-        
+    
   * *calcSpillCost* 函数的执行流程？
 
     答：*calcSpillCost*作用于Physical Register上，用于计算如果这个物理寄存器被换出到内存需要付出的代价。
@@ -113,15 +113,24 @@
 
   * *hasTiedOps*，*hasPartialRedefs，hasEarlyClobbers* 变量的作用？
 
-    答：各个变量的含义：
+    答：**各个变量标记内容的含义，以及需要的特殊处理：**
     
-    - *hasTiedOps*：两个操作数为Tied意为这两个操作数的限制为必须对应于同一个寄存器。如果一条指令中有操作数包含了这种限制，则hasTiedOps为真。
+    - ***hasTiedOps***：一个操作数为Tied意为这个操作数受到限制，必须与另一个操作数对应于同一个寄存器。通常是指某变量的def和use在同一个寄存器上。如果一条指令中有操作数包含了这种限制，则hasTiedOps为真。
+       - 如果遇到了这种限制，则给先遇到的操作数的虚拟寄存器分配物理寄存器之后，后遇到的操作数也必须继续使用这个物理寄存器，这就是Tied条件。这是通过优先对含Tie的操作数进行物理寄存器分配，然后标记寄存器为在用(UsedInInstr)（源代码中体现为allocateInstruction中Second Scan后call spill前的那一段），则下次使用的时候因为中间不可能被spill等，就能保证和最初分配时是同一个寄存器。
     
-    - *hasPartialRedefs*：Partial Redefination指某个寄存器的一部分(subregister)被修改(define)，并且这个寄存器在这条指令中需要被读，所以叫”部分被重定义“。
+    - ***hasPartialRedefs***：Partial Redefination指某个寄存器的一部分(subregister, Ref: [llvm-slides](https://llvm.org/devmtg/2016-11/Slides/Braun-DealingWithRegisterHierarchies.pdf))被修改(define)，所以叫”部分被重定义“。是一个read-modify-write的过程，判断条件为是def、有subregister、进行了读操作(readsVirtualRegister)。(Ref: [llvm](https://llvm.org/doxygen/MachineInstr_8cpp_source.html#l00972))
     
-    - *hasEarlyClobbers*：earlyclobber的操作数表示这个操作数在指令执行结束前就被（根据输入操作数）写覆盖了(Ref: [gcc](https://gcc.gnu.org/onlinedocs/gcc/Modifiers.html#Modifiers))。因此这一操作数不能被存储在这条指令会读取的寄存器中，也不能存储在
+       - 如果出现这种情况，要提前给虚拟寄存器分配物理寄存器；并且和上述Tied相同，对于这种复杂的情况不能允许中途物理寄存器被spill或是被占用，所以要将其markRegUsedInInstr进行“保护”（源码中handleThroughOperands的最后），不允许spill。
     
-       如果一条指令(MachineInstruction)中出现了这些特殊的性质，在寄存器分配上就需要特殊处理。
+    - ***hasEarlyClobbers***：earlyclobber的操作数表示这个操作数在指令执行结束前就被（根据输入操作数）写覆盖了，即def在use之前(Ref: [llvm-slides](http://llvm.org/devmtg/2017-10/slides/Braun-Welcome%20to%20the%20Back%20End.pdf))，这与一般汇编指令操作数的顺序是相反的。根据[llvm](https://llvm.org/doxygen/MachineOperand_8h_source.html#l00143)，这是用于处理[GCC内联汇编中对寄存器的限制](https://gcc.gnu.org/onlinedocs/gcc/Modifiers.html#Modifiers)。这一操作数也不能被存储在这条指令会读取的寄存器中。
+    
+       - 由于earlyclobber的顺序异常，正常先处理use再处理def的顺序就不能正确处理earlyclobber。需要先（handleThroughOperand中）进行def的处理(defineVirtReg, setPhysReg)，而后回归正常流程时use将会被处理。
+       
+       - 在调用了handleThroughOperand之后，复用了hasEarlyClobbers，作为下面需要额外处理（将当前使用的是def或者是Tied的物理寄存器标记为在用，因为其中有物理寄存器因为具有上面几种性质；而当没有特殊性质的寄存器时并不需要这样）的标记。
+       
+       **设置这些变量的原因：**这三个变量的作用就是标记这几种性质特殊的操作数是否出现（如上，hasEarlyClobbers也被用作标记其他特殊性质），如果出现，就遍历操作数（最初的遍历只是为了判断是否出现，后面还是需要重新遍历找到具体的操作数位置），找出具体出现这种性质的操作数，进行相应处理。
+       
+       其实如果不使用这些变量，代码中所有用到这些变量的地方全部认为True，程序也是可以正常工作的。但是考虑到特殊情况出现的概率应该不会很高，首先遍历一遍操作数记录下特殊情况是否出现，后面就可以简单地使用`  if (hasEarlyClobbers)`的形式只针对有特殊情况的时候才进行专门处理，能够提升效率，减少很多不必要的遍历（有时候也能减少一些寄存器被标记成Used，进而可用寄存器更加宽裕，能提高生成的程序效率）。
 
 - 书上所讲的算法与LLVM源码中的实现之间的不同点
 

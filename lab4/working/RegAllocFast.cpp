@@ -805,6 +805,7 @@ void RegAllocFast::handleThroughOperands(MachineInstr &MI,
   //VirtReg
   SmallVector<unsigned, 8> PartialDefs;
   LLVM_DEBUG(dbgs() << "Allocating tied uses.\n");
+  //this traverse done two things
   for (unsigned I = 0, E = MI.getNumOperands(); I != E; ++I) {
     MachineOperand &MO = MI.getOperand(I);
     if (!MO.isReg()) continue;

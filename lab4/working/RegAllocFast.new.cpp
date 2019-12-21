@@ -907,6 +907,7 @@ void RegAllocFast::handleThroughOperands(MachineInstr &MI,
     Register Reg = MO.getReg();
     if (!Reg || !Register::isPhysicalRegister(Reg))
       continue;
+    //reg, def, phys
     markRegUsedInInstr(Reg);
     for (MCRegAliasIterator AI(Reg, TRI, true); AI.isValid(); ++AI) {
       if (ThroughRegs.count(PhysRegState[*AI]))
@@ -927,6 +928,7 @@ void RegAllocFast::handleThroughOperands(MachineInstr &MI,
       LLVM_DEBUG(dbgs() << "Operand " << I << "(" << MO
                         << ") is tied to operand " << MI.findTiedOperandIdx(I)
                         << ".\n");
+      //use of tied operand
       LiveReg &LR = reloadVirtReg(MI, I, Reg, 0);
       MCPhysReg PhysReg = LR.PhysReg;
       setPhysReg(MI, MO, PhysReg);
