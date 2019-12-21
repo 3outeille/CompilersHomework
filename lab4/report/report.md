@@ -1,12 +1,20 @@
 # lab4实验报告
 
-组长 姓名 学号
-
 小组成员 姓名 学号
+PB17000002 古宜民（队长）
+PB15081586 苏文治
+PB16001837 朱凡
 
 ## 实验要求
 
-请按照自己的理解，写明本次实验需要干什么
+1. RISC-V 机器代码的生成和运行
+    - 重新编译LLVM使得LLVM支持RISC-V
+    - 生成RISC-V源码
+    - 使用模拟器运行RISC-V源码
+
+2. LLVM源码阅读与理解
+    - 阅读RegAllocFast.cpp，了解文件执行流程，并关注几个重点函数和变量的作用
+    - 与龙书的寄存器分配算法比较，分析不同点
 
 ## 报告内容
 
@@ -15,21 +23,21 @@
 - LLVM 8.0.1适配RISC-V
 
   如图，根据文档重新编译使得LLVM 8.0.1适配RISC-V：
-  ![1_1_1](src/1_1_1.png)  
-  ...  
-  ![1_1_2](src/1_1_2.png)  
-  ...  
-  ![1_1_3](src/1_1_3.png)  
+  ![1_1_1](src/1_1_1.png)
+  ...
+  ![1_1_2](src/1_1_2.png)
+  ...
+  ![1_1_3](src/1_1_3.png)
 
 - lab3-0 GCD样例 LLVM IR 生成 RISC-V源码的过程
 
   预先完成riscv-gnu-toolchain的编译安装，感谢issues#259中提供的源代码压缩包;之后如图根据文档先使用clang和llc对GCD样例程序生成汇编，接着使用riscv版的gcc对其生成执行程序，这一步之前需将riscv-gnu-toolchain的安装路径/bin加入PATH中：
-  ![1_2](src/1_2.png)  
+  ![1_2](src/1_2.png)
 
 - 安装 Spike模拟器并运行上述生成的RISC-V源码
 
   预先由github得到riscv-pk和riscv-isa-sim(spike模拟器)的源码，并编译安装在和riscv-gnu-toolchain同一路径下，并且除上一步中已加入的路径，还需将riscv-gnu-toolchain的安装路径/riscv64-unknown-elf/bin即pk可执行文件所在路径加入PATH中或直接在命令中指定；接着根据文档调试上一步得到的可执行文件如图，成功执行：
-  ![1_3](src/1_3.png)  
+  ![1_3](src/1_3.png)
 
 #### 2. LLVM源码阅读与理解
 
@@ -124,7 +132,7 @@
     
     - *hasTiedOps*：两个操作数为Tied意为这两个操作数的限制为必须对应于同一个寄存器。如果一条指令中有操作数包含了这种限制，则hasTiedOps为真。
     - *hasPartialRedefs*：Partial Redefination指一个寄存器的一部分(subregister)被重新定义。
-    - *hasEarlyClobbers*：earlyclobber的操作数表示这个操作数在指令执行结束前就被（根据输入操作数）写覆盖了(Ref: [gcc](https://gcc.gnu.org/onlinedocs/gcc/Modifiers.html#Modifiers))。因此这一操作数不能被存储在这条指令会读取的寄存器中，也不能存储在
+    - *hasEarlyClobbers*：early clobber几种特殊情况，这几种特殊情况是什么含义，以及需要怎么处理的操作数表示这个操作数在指令执行结束前就被（根据输入操作数）写覆盖了(Ref: [gcc](https://gcc.gnu.org/onlinedocs/gcc/Modifiers.html#Modifiers))。因此这一操作数不能被存储在这条指令会读取的寄存器中，也不能存储在
 
 - 书上所讲的算法与LLVM源码中的实现之间的不同点
 
@@ -134,7 +142,26 @@
 
 ## 组内讨论内容
 
-......
+1. RISC-V 机器代码的生成和运行
+
+    riscv-gnu-toolchain下载速度慢，且在虚拟机中编译安装riscv-gnu-toolchain极其消耗磁盘空间，多次扩充虚拟硬盘容量还是提示空间不足。
+    
+    解决方式：
+    
+        1. 使用[issue #257](http://210.45.114.30/gbxu/notice_board/issues/257)中提供的镜像。
+        2. 不在虚拟硬盘中编译，而是改为在主机的共享文件夹中编译
+        
+2. LLVM源码阅读与理解（下列各个问题的讨论结果已经在回答助教提出的问题的过程中写明）
+
+    - 虚拟寄存器和物理寄存器的区别
+    
+    - 程序中多次出现isDef、isUse这些函数，寄存器的use def两个状态的区别。相应的，还有与之关联的：isUndef isDead isKill
+    
+    - live-in寄存器与live-out寄存器
+    
+    - 寄存器的三个状态 regDisabled regFree regReserved 的区别以及用途
+    
+    - *hasTiedOps*，*hasPartialRedefs，hasEarlyClobbers* 三个变量，分别对应了tied, Partial Redefination, early clobber几种特殊情况，这几种特殊情况是什么含义，以及需要怎么处理
 
 ## 实验总结
 
