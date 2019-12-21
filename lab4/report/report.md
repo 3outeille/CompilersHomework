@@ -32,18 +32,20 @@
 
     答：
     
-    虚拟寄存器与物理寄存器的关系：
-    http://llvm.1065342.n5.nabble.com/Virtual-register-td8533.html
+    RegAllocFast 是对 Machine IR 执行的，Machine IR 比 IR 更底层，可能同时存在虚拟寄存器与物理寄存器。
+    虚拟寄存器是代表物理寄存器的符号，但不一定和物理寄存器一一对应，如平时写的.ll文件中，%0 %1之类的即为虚拟寄存器。物理寄存器是与机器相关的实际存在的寄存器。RegAllocFast主要任务是，把还存在的虚拟寄存器与物理寄存器对应起来，完成寄存器的分配。
+    
+    整个流程为：
 
-    createFastRegisterAllocator 创建 RegAllocFast 实例
-    对每个Function执行runOnMachineFunction
-        初始化虚拟寄存器到物理寄存器的map
-        对每个BasicBlock执行allocateBasicBlock
-            Add live-in registers as live.？？？ line 1126
-            对每条指令，执行allocateInstruction
-            Spill 物理寄存器（出口处的活跃变量？？？）
-            Erase all the coalesced copies.  (why :becauseLiveVirtRegs might refer to the instrs.)
-        移除虚拟寄存器
+    - createFastRegisterAllocator 创建 RegAllocFast 实例
+    - 对每个Machine Function执行runOnMachineFunction，runOnMachineFunction流程为：
+        - 初始化虚拟寄存器与物理寄存器对应的的map
+        - 对每个Machine BasicBlock执行allocateBasicBlock，allocateBasicBlock流程为：
+            - 把live-in寄存器标记为regReserved。live-in寄存器是指在执行这条指令之前，这个寄存器是活的。被标记为regReserved后，该寄存器将被保留不会被分配。
+            - 对每条指令，执行allocateInstruction（内有四次扫描，执行流程见下一题的回答）
+            - spill当下还与虚拟寄存器对应的物理寄存器，从而把物理寄存器腾出来，为下一个BasicBlock的使用做准备。
+            - 从BasicBlock中移除可以合并的copy指令
+        - 已经将所有虚拟寄存器替换为物理寄存器了，从RegInfo记录信息中移除所有虚拟寄存器
 
   * *allocateInstruction* 函数有几次扫描过程以及每一次扫描的功能？
 
