@@ -17,3 +17,5 @@ Labs for "Principles and Techniques of Compilers" course by Cheng Li, USTC 2019.
 Detailed compile/run instructions and lab requirements can be found in README files in subdirectories. 
 
 See Also [CminusC](https://github.com/ustcpetergu/CminusC) which combines these code as a whole project and is easy to run.
+
+Made this open because many other students have done so, but do contact me if you're TA or supervisor of this course and want this removed. 
